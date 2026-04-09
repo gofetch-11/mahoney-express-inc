@@ -15,3 +15,4 @@ export const backfillAddressesTextract = base44.functions.backfillAddressesTextr
 export const saveDhlRecords = base44.functions.saveDhlRecords;
 export const saveDhlBatchFromAutomation = base44.functions.saveDhlBatchFromAutomation;
 export const backfill = base44.functions.backfill;
+export const saveDhlTicketsBatch = base44.functions.saveDhlTicketsBatch;

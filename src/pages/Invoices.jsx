@@ -1,14 +1,22 @@
 import { useState, useEffect } from "react";
 import { Invoice, Job, Customer } from "@/api/entities";
-import { Plus, FileText, DollarSign, Printer, ArrowLeft } from "lucide-react";
+import { Plus, FileText, DollarSign, Printer, ArrowLeft, CheckCircle, AlertCircle, Clock, X } from "lucide-react";
 
-const STATUS_COLORS = {
-  Draft: "bg-gray-100 text-gray-600",
-  Sent: "bg-blue-100 text-blue-700",
-  Partial: "bg-yellow-100 text-yellow-700",
-  Paid: "bg-green-100 text-green-700",
-  Overdue: "bg-red-100 text-red-700",
-  Voided: "bg-gray-100 text-gray-400 line-through",
+const GREEN = "#0fa14a";
+const BLACK = "#060204";
+const BG = "#f4f4f2";
+const LOGO_HEADER = "https://media.base44.com/images/public/69cb07fb94b4627f0bd76151/a863be72e_MahoneyExpressInc-Header.png";
+const SHAMROCK = "https://media.base44.com/images/public/69cb07fb94b4627f0bd76151/828dbca4e_Shamrock.png";
+
+const fmt = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
+
+const STATUS_CFG = {
+  Draft:   { bg: "#f4f4f2", text: "#6b6b67", dot: "#b0b2b7" },
+  Sent:    { bg: "#e8f4ff", text: "#1d4ed8", dot: "#3b82f6" },
+  Partial: { bg: "#fff8e1", text: "#b45309", dot: "#f59e0b" },
+  Paid:    { bg: "#e6f9ee", text: "#166534", dot: GREEN },
+  Overdue: { bg: "#fee2e2", text: "#991b1b", dot: "#ef4444" },
+  Voided:  { bg: "#f4f4f2", text: "#b0b2b7", dot: "#d1d5db" },
 };
 
 function genInvNumber() {
@@ -21,6 +29,7 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [viewInvoice, setViewInvoice] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("All");
 
   useEffect(() => { loadInvoices(); }, []);
 
@@ -30,86 +39,118 @@ export default function Invoices() {
     setLoading(false);
   }
 
-  const fmt = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
-
   const totals = {
-    outstanding: invoices.filter(i => ["Sent","Partial","Overdue"].includes(i.status)).reduce((s,i) => s + (i.balance_due||0), 0),
-    paid: invoices.filter(i => i.status === "Paid").reduce((s,i) => s + (i.total_amount||0), 0),
-    overdue: invoices.filter(i => i.status === "Overdue").reduce((s,i) => s + (i.balance_due||0), 0),
+    outstanding: invoices.filter(i => ["Sent","Partial","Overdue"].includes(i.status)).reduce((s,i) => s+(i.balance_due||0), 0),
+    paid: invoices.filter(i => i.status === "Paid").reduce((s,i) => s+(i.total_amount||0), 0),
+    overdue: invoices.filter(i => i.status === "Overdue").reduce((s,i) => s+(i.balance_due||0), 0),
   };
 
-  if (viewInvoice) return <InvoiceView invoice={viewInvoice} onBack={() => { setViewInvoice(null); loadInvoices(); }} />;
+  const filtered = statusFilter === "All" ? invoices : invoices.filter(i => i.status === statusFilter);
+
+  if (viewInvoice) return <InvoiceView invoice={viewInvoice} onBack={() => { setViewInvoice(null); loadInvoices(); }} onStatusChange={loadInvoices} />;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ minHeight: "100vh", background: BG, fontFamily: "Source Sans 3, sans-serif", padding: 24 }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Invoices</h1>
-          <p className="text-sm text-gray-500">{invoices.length} invoices</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+            <img src={SHAMROCK} alt="" style={{ width: 16, height: 16 }} />
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: GREEN, fontFamily: "Barlow, sans-serif" }}>Billing</span>
+          </div>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: BLACK, margin: 0, fontFamily: "Barlow, sans-serif" }}>Invoices</h1>
+          <p style={{ fontSize: 13, color: "#6b6b67", margin: "2px 0 0" }}>{invoices.length} total invoices</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="bg-red-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-red-700 flex items-center gap-2 text-sm">
-          <Plus className="w-4 h-4" />New Invoice
+        <button onClick={() => setShowCreate(true)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", background: GREEN, color: "#fff", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "Barlow, sans-serif" }}>
+          <Plus size={16} />New Invoice
         </button>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-xs text-gray-500 mb-1">Outstanding A/R</p>
-          <p className="text-xl font-bold text-blue-600">{fmt(totals.outstanding)}</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-red-200 p-4 shadow-sm">
-          <p className="text-xs text-gray-500 mb-1">Overdue</p>
-          <p className="text-xl font-bold text-red-600">{fmt(totals.overdue)}</p>
-        </div>
-        <div className="bg-white rounded-2xl border border-green-200 p-4 shadow-sm">
-          <p className="text-xs text-gray-500 mb-1">Collected (All Time)</p>
-          <p className="text-xl font-bold text-green-600">{fmt(totals.paid)}</p>
-        </div>
+      {/* Summary Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 20 }}>
+        {[
+          { label: "Outstanding A/R", value: fmt(totals.outstanding), color: "#1d4ed8", bg: "#e8f4ff", icon: <Clock size={16} style={{ color: "#1d4ed8" }} /> },
+          { label: "Overdue",         value: fmt(totals.overdue),     color: "#ef4444", bg: "#fee2e2", icon: <AlertCircle size={16} style={{ color: "#ef4444" }} /> },
+          { label: "Collected",       value: fmt(totals.paid),        color: GREEN,     bg: "#e6f9ee", icon: <CheckCircle size={16} style={{ color: GREEN }} /> },
+        ].map(c => (
+          <div key={c.label} style={{ background: "#fff", border: `1px solid ${c.bg}`, borderRadius: 16, padding: "18px 20px", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#6b6b67", fontFamily: "Barlow, sans-serif" }}>{c.label}</span>
+              {c.icon}
+            </div>
+            <p style={{ fontSize: 26, fontWeight: 800, color: c.color, margin: 0, fontFamily: "Barlow, sans-serif" }}>{c.value}</p>
+          </div>
+        ))}
       </div>
 
-      {loading ? <div className="text-center py-12 text-gray-400">Loading...</div> : (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          {invoices.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>No invoices yet.</p>
-              <button onClick={() => setShowCreate(true)} className="mt-3 text-red-600 font-medium hover:underline">Create your first invoice →</button>
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Invoice #</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Customer</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden md:table-cell">Issue Date</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 hidden md:table-cell">Due Date</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600">Total</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-600">Balance</th>
-                  <th className="px-4 py-3"></th>
+      {/* Status Filter Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        {["All", "Draft", "Sent", "Partial", "Paid", "Overdue", "Voided"].map(s => {
+          const active = statusFilter === s;
+          const cfg = STATUS_CFG[s] || {};
+          return (
+            <button key={s} onClick={() => setStatusFilter(s)} style={{
+              padding: "6px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              background: active ? (s === "All" ? BLACK : cfg.bg) : "#fff",
+              color: active ? (s === "All" ? "#fff" : cfg.text) : "#6b6b67",
+              border: `1px solid ${active ? (s === "All" ? BLACK : cfg.dot) : "rgba(0,0,0,0.1)"}`,
+              fontFamily: "Barlow, sans-serif",
+            }}>
+              {s} <span style={{ opacity: 0.6 }}>{s === "All" ? invoices.length : invoices.filter(i => i.status === s).length}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 48, color: "#b0b2b7" }}>Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 64, color: "#b0b2b7" }}>
+          <img src={SHAMROCK} alt="" style={{ width: 36, height: 36, opacity: 0.15, marginBottom: 10 }} />
+          <p>No invoices found.</p>
+          <button onClick={() => setShowCreate(true)} style={{ marginTop: 8, color: GREEN, fontWeight: 600, background: "none", border: "none", cursor: "pointer", fontSize: 14 }}>Create one →</button>
+        </div>
+      ) : (
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: BLACK, borderBottom: `2px solid ${GREEN}` }}>
+                  {["Invoice #","Customer","Issue Date","Due Date","Status","Total","Balance Due",""].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: h === "" ? GREEN : "#fff", fontFamily: "Barlow, sans-serif", whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {invoices.map(inv => (
-                  <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-700">{inv.invoice_number}</td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{inv.customer_name}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{inv.issue_date}</td>
-                    <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{inv.due_date}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[inv.status]}`}>{inv.status}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-800">{fmt(inv.total_amount)}</td>
-                    <td className={`px-4 py-3 text-right font-semibold ${(inv.balance_due||0) > 0 ? "text-red-600" : "text-green-600"}`}>{fmt(inv.balance_due)}</td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => setViewInvoice(inv)} className="text-xs text-blue-600 hover:underline">View</button>
-                    </td>
-                  </tr>
-                ))}
+              <tbody>
+                {filtered.map((inv, i) => {
+                  const sc = STATUS_CFG[inv.status] || STATUS_CFG.Draft;
+                  const isOverdue = inv.status === "Overdue";
+                  return (
+                    <tr key={inv.id} style={{ background: i % 2 === 0 ? "#fff" : "#fafafa", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12, color: GREEN }}>{inv.invoice_number}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px", fontWeight: 600, color: BLACK }}>{inv.customer_name || "—"}</td>
+                      <td style={{ padding: "12px 16px", color: "#6b6b67" }}>{inv.issue_date || "—"}</td>
+                      <td style={{ padding: "12px 16px", color: isOverdue ? "#ef4444" : "#6b6b67", fontWeight: isOverdue ? 700 : 400 }}>{inv.due_date || "—"}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: sc.bg, color: sc.text }}>{inv.status}</span>
+                      </td>
+                      <td style={{ padding: "12px 16px", fontWeight: 700, color: BLACK, fontFamily: "Barlow, sans-serif" }}>{fmt(inv.total_amount)}</td>
+                      <td style={{ padding: "12px 16px", fontWeight: 700, fontFamily: "Barlow, sans-serif", color: (inv.balance_due||0) > 0 ? "#ef4444" : GREEN }}>{fmt(inv.balance_due)}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <button onClick={() => setViewInvoice(inv)} style={{ fontSize: 12, fontWeight: 700, color: "#3b82f6", background: "none", border: "none", cursor: "pointer" }}>View →</button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-          )}
+          </div>
+          <div style={{ padding: "10px 16px", fontSize: 11, color: "#b0b2b7", borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+            Showing {filtered.length} of {invoices.length} invoices
+          </div>
         </div>
       )}
 
@@ -118,6 +159,7 @@ export default function Invoices() {
   );
 }
 
+// ─── CREATE MODAL ──────────────────────────────────────────────────────────────
 function CreateInvoiceModal({ onClose }) {
   const [customers, setCustomers] = useState([]);
   const [availableJobs, setAvailableJobs] = useState([]);
@@ -126,118 +168,115 @@ function CreateInvoiceModal({ onClose }) {
     invoice_number: genInvNumber(),
     customer_id: "", customer_name: "",
     issue_date: new Date().toISOString().split("T")[0],
-    due_date: "", payment_terms: "Net 30",
-    tax_rate: 0, notes: "",
+    due_date: "", payment_terms: "Net 30", tax_rate: 0, notes: "",
   });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    Customer.filter({ status: "Active" }).then(setCustomers);
-  }, []);
+  useEffect(() => { Customer.filter({ status: "Active" }).then(setCustomers); }, []);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleCustomer = async (id) => {
     const c = customers.find(x => x.id === id);
     if (!c) return;
-    set("customer_id", id);
-    set("customer_name", c.company_name);
+    set("customer_id", id); set("customer_name", c.company_name);
     set("payment_terms", c.payment_terms || "Net 30");
-    // Set due date based on terms
     const days = { "Net 15": 15, "Net 30": 30, "Net 45": 45, "Due on Receipt": 0, "COD": 0 };
-    const d = new Date();
-    d.setDate(d.getDate() + (days[c.payment_terms] || 30));
+    const d = new Date(); d.setDate(d.getDate() + (days[c.payment_terms] || 30));
     set("due_date", d.toISOString().split("T")[0]);
-    // Load unbilled jobs for this customer
     const jobs = await Job.filter({ customer_id: id });
-    setAvailableJobs(jobs.filter(j => j.status === "Delivered" && !j.invoice_id));
+    setAvailableJobs(jobs.filter(j => j.status === "Delivered"));
   };
 
-  const toggleJob = (job) => {
-    setSelectedJobs(prev =>
-      prev.find(j => j.id === job.id) ? prev.filter(j => j.id !== job.id) : [...prev, job]
-    );
-  };
+  const toggleJob = (job) => setSelectedJobs(prev =>
+    prev.find(j => j.id === job.id) ? prev.filter(j => j.id !== job.id) : [...prev, job]
+  );
 
-  const subtotal = selectedJobs.reduce((s, j) => s + (j.bill_rate || 0), 0);
-  const taxAmount = subtotal * ((form.tax_rate || 0) / 100);
+  const subtotal = selectedJobs.reduce((s,j) => s+(j.bill_rate||0), 0);
+  const taxAmount = subtotal * ((form.tax_rate||0)/100);
   const total = subtotal + taxAmount;
-  const fmt = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
 
   const save = async () => {
     setSaving(true);
     const lineItems = JSON.stringify(selectedJobs.map(j => ({
-      job_number: j.job_number, description: `${j.service_type || "Delivery"}: ${j.pickup_city} → ${j.delivery_city}`, amount: j.bill_rate || 0
+      job_number: j.job_number,
+      description: `${j.service_type||"Delivery"}: ${j.pickup_city||"?"} → ${j.delivery_city||"?"}`,
+      amount: j.bill_rate||0,
     })));
     await Invoice.create({
       ...form,
       job_ids: selectedJobs.map(j => j.id).join(","),
       line_items: lineItems,
-      subtotal,
-      tax_amount: taxAmount,
-      total_amount: total,
-      amount_paid: 0,
-      balance_due: total,
-      status: "Draft",
+      subtotal, tax_amount: taxAmount, total_amount: total,
+      amount_paid: 0, balance_due: total, status: "Draft",
     });
-    setSaving(false);
-    onClose();
+    setSaving(false); onClose();
   };
 
+  const inputStyle = { width: "100%", padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)", fontSize: 13, color: BLACK, background: "#fff", outline: "none", fontFamily: "Source Sans 3, sans-serif" };
+  const labelStyle = { display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#6b6b67", marginBottom: 5, fontFamily: "Barlow, sans-serif" };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 sticky top-0 bg-white">
-          <h2 className="font-bold text-gray-900">Create Invoice</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16 }}>
+      <div style={{ background: "#fff", borderRadius: 20, boxShadow: "0 8px 40px rgba(0,0,0,0.2)", width: "100%", maxWidth: 640, maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        {/* Modal header */}
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <img src={SHAMROCK} alt="" style={{ width: 20, height: 20 }} />
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: BLACK, margin: 0, fontFamily: "Barlow, sans-serif" }}>New Invoice</h2>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#b0b2b7" }}><X size={20} /></button>
         </div>
-        <div className="p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Invoice #</label>
-              <input className="input" value={form.invoice_number} onChange={e => set("invoice_number", e.target.value)} />
-            </div>
-            <div>
-              <label className="label">Issue Date</label>
-              <input className="input" type="date" value={form.issue_date} onChange={e => set("issue_date", e.target.value)} />
-            </div>
-            <div className="col-span-2">
-              <label className="label">Customer</label>
-              <select className="input" value={form.customer_id} onChange={e => handleCustomer(e.target.value)}>
-                <option value="">Select customer...</option>
+
+        <div style={{ padding: "20px 22px", overflowY: "auto", flex: 1 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+            <div><label style={labelStyle}>Invoice #</label><input style={inputStyle} value={form.invoice_number} onChange={e => set("invoice_number", e.target.value)} /></div>
+            <div><label style={labelStyle}>Issue Date</label><input style={inputStyle} type="date" value={form.issue_date} onChange={e => set("issue_date", e.target.value)} /></div>
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={labelStyle}>Customer</label>
+              <select style={inputStyle} value={form.customer_id} onChange={e => handleCustomer(e.target.value)}>
+                <option value="">Select customer…</option>
                 {customers.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}
               </select>
             </div>
-            <div>
-              <label className="label">Payment Terms</label>
-              <select className="input" value={form.payment_terms} onChange={e => set("payment_terms", e.target.value)}>
-                {["Net 15","Net 30","Net 45","Due on Receipt","COD"].map(p => <option key={p}>{p}</option>)}
+            <div><label style={labelStyle}>Payment Terms</label>
+              <select style={inputStyle} value={form.payment_terms} onChange={e => set("payment_terms", e.target.value)}>
+                {["Net 15","Net 30","Net 45","Due on Receipt","COD"].map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
-            <div>
-              <label className="label">Due Date</label>
-              <input className="input" type="date" value={form.due_date} onChange={e => set("due_date", e.target.value)} />
-            </div>
+            <div><label style={labelStyle}>Due Date</label><input style={inputStyle} type="date" value={form.due_date} onChange={e => set("due_date", e.target.value)} /></div>
+            <div><label style={labelStyle}>Tax Rate (%)</label><input style={inputStyle} type="number" placeholder="0" value={form.tax_rate} onChange={e => set("tax_rate", parseFloat(e.target.value)||0)} /></div>
           </div>
 
+          {/* Jobs selector */}
           {form.customer_id && (
-            <div>
-              <label className="label">Select Delivered Jobs to Bill</label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Select Delivered Jobs to Invoice</label>
               {availableJobs.length === 0 ? (
-                <p className="text-sm text-gray-400 bg-gray-50 rounded-xl p-3">No unbilled delivered jobs for this customer.</p>
+                <div style={{ padding: "12px 14px", borderRadius: 10, background: BG, color: "#6b6b67", fontSize: 13 }}>No delivered jobs found for this customer.</div>
               ) : (
-                <div className="border border-gray-200 rounded-xl overflow-hidden">
-                  {availableJobs.map(j => {
-                    const checked = !!selectedJobs.find(x => x.id === j.id);
+                <div style={{ border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, overflow: "hidden" }}>
+                  {availableJobs.map((job, i) => {
+                    const selected = selectedJobs.find(j => j.id === job.id);
                     return (
-                      <label key={j.id} className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 border-b last:border-0 border-gray-100 ${checked ? "bg-red-50" : ""}`}>
-                        <input type="checkbox" checked={checked} onChange={() => toggleJob(j)} className="w-4 h-4 accent-red-600" />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium text-gray-800">{j.job_number}</span>
-                          <span className="text-xs text-gray-500 ml-2">{j.pickup_city} → {j.delivery_city}</span>
+                      <div key={job.id} onClick={() => toggleJob(job)} style={{
+                        display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", cursor: "pointer",
+                        background: selected ? "#e6f9ee" : i % 2 === 0 ? "#fff" : "#fafafa",
+                        borderBottom: i < availableJobs.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none",
+                        transition: "background 0.1s",
+                      }}>
+                        <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${selected ? GREEN : "#d1d5db"}`, background: selected ? GREEN : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          {selected && <span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>✓</span>}
                         </div>
-                        <span className="text-sm font-semibold text-gray-800">{fmt(j.bill_rate)}</span>
-                      </label>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, fontFamily: "Barlow, sans-serif" }}>{job.job_number}</span>
+                            <span style={{ fontSize: 12, color: "#6b6b67" }}>{job.pickup_city||"?"} → {job.delivery_city||"?"}</span>
+                          </div>
+                          <p style={{ fontSize: 11, color: "#b0b2b7", margin: "2px 0 0" }}>{job.service_type || "Delivery"}</p>
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: BLACK, fontFamily: "Barlow, sans-serif", flexShrink: 0 }}>{fmt(job.bill_rate)}</span>
+                      </div>
                     );
                   })}
                 </div>
@@ -245,26 +284,33 @@ function CreateInvoiceModal({ onClose }) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Tax Rate (%)</label>
-              <input className="input" type="number" placeholder="0" value={form.tax_rate} onChange={e => set("tax_rate", e.target.value)} />
+          {/* Totals preview */}
+          {selectedJobs.length > 0 && (
+            <div style={{ background: BLACK, borderRadius: 12, padding: "14px 18px", marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6, color: "#b0b2b7" }}>
+                <span>Subtotal ({selectedJobs.length} jobs)</span><span style={{ fontWeight: 600, color: "#fff" }}>{fmt(subtotal)}</span>
+              </div>
+              {taxAmount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6, color: "#b0b2b7" }}>
+                  <span>Tax ({form.tax_rate}%)</span><span style={{ fontWeight: 600, color: "#fff" }}>{fmt(taxAmount)}</span>
+                </div>
+              )}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", marginTop: 8, paddingTop: 8, display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 800, fontFamily: "Barlow, sans-serif" }}>
+                <span style={{ color: "#fff" }}>Total</span><span style={{ color: GREEN }}>{fmt(total)}</span>
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-3">
-              <div className="flex justify-between text-sm mb-1"><span className="text-gray-500">Subtotal</span><span className="font-medium">{fmt(subtotal)}</span></div>
-              <div className="flex justify-between text-sm mb-1"><span className="text-gray-500">Tax</span><span className="font-medium">{fmt(taxAmount)}</span></div>
-              <div className="flex justify-between text-sm font-bold pt-1 border-t border-gray-200"><span>Total</span><span className="text-red-600">{fmt(total)}</span></div>
-            </div>
-          </div>
+          )}
+
           <div>
-            <label className="label">Notes</label>
-            <textarea className="input" rows={2} value={form.notes} onChange={e => set("notes", e.target.value)} />
+            <label style={labelStyle}>Notes</label>
+            <textarea style={{ ...inputStyle, resize: "vertical" }} rows={3} placeholder="Payment instructions, thank-you note…" value={form.notes} onChange={e => set("notes", e.target.value)} />
           </div>
         </div>
-        <div className="flex gap-2 p-5 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 border border-gray-200 py-2 rounded-xl text-gray-600 hover:bg-gray-50">Cancel</button>
-          <button onClick={save} disabled={saving || !form.customer_id} className="flex-1 bg-red-600 text-white py-2 rounded-xl font-semibold hover:bg-red-700 disabled:opacity-50">
-            {saving ? "Saving..." : "Create Invoice"}
+
+        <div style={{ padding: "16px 22px", borderTop: "1px solid rgba(0,0,0,0.08)", display: "flex", gap: 10, flexShrink: 0 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "11px", borderRadius: 12, border: "1px solid rgba(0,0,0,0.12)", background: "#fff", color: "#6b6b67", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+          <button onClick={save} disabled={saving || !form.customer_id} style={{ flex: 2, padding: "11px", borderRadius: 12, background: GREEN, color: "#fff", border: "none", fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "Barlow, sans-serif", opacity: (saving || !form.customer_id) ? 0.5 : 1 }}>
+            {saving ? "Creating…" : "Create Invoice"}
           </button>
         </div>
       </div>
@@ -272,94 +318,203 @@ function CreateInvoiceModal({ onClose }) {
   );
 }
 
-function InvoiceView({ invoice, onBack }) {
-  const [inv, setInv] = useState({ ...invoice });
+// ─── INVOICE VIEW / PRINT ─────────────────────────────────────────────────────
+function InvoiceView({ invoice, onBack, onStatusChange }) {
+  const [inv, setInv] = useState(invoice);
+  const [payment, setPayment] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
   const [saving, setSaving] = useState(false);
-  const lineItems = (() => { try { return JSON.parse(inv.line_items || "[]"); } catch { return []; } })();
-  const fmt = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
 
-  const updateStatus = async (status) => {
+  const lineItems = (() => { try { return JSON.parse(inv.line_items || "[]"); } catch { return []; } })();
+
+  const markSent = async () => {
     setSaving(true);
-    let updates = { status };
-    if (status === "Paid") updates = { ...updates, amount_paid: inv.total_amount, balance_due: 0 };
-    await Invoice.update(inv.id, updates);
-    setInv(i => ({ ...i, ...updates }));
+    const updated = await Invoice.update(inv.id, { status: "Sent" });
+    setInv(u => ({ ...u, status: "Sent" }));
     setSaving(false);
+    onStatusChange?.();
   };
 
+  const recordPayment = async () => {
+    const amount = parseFloat(payment) || 0;
+    if (!amount) return;
+    setSaving(true);
+    const newPaid = (inv.amount_paid||0) + amount;
+    const newBalance = (inv.total_amount||0) - newPaid;
+    const newStatus = newBalance <= 0 ? "Paid" : "Partial";
+    await Invoice.update(inv.id, { amount_paid: newPaid, balance_due: Math.max(0, newBalance), status: newStatus });
+    setInv(u => ({ ...u, amount_paid: newPaid, balance_due: Math.max(0, newBalance), status: newStatus }));
+    setPayment(""); setShowPayment(false); setSaving(false);
+    onStatusChange?.();
+  };
+
+  const sc = STATUS_CFG[inv.status] || STATUS_CFG.Draft;
+
   return (
-    <div className="min-h-screen bg-white p-6 max-w-3xl mx-auto">
-      <div className="flex justify-between mb-6 print:hidden">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-600 hover:text-gray-900"><ArrowLeft className="w-4 h-4" />Back to Invoices</button>
-        <div className="flex gap-2">
-          {inv.status !== "Paid" && inv.status !== "Voided" && (
-            <button onClick={() => updateStatus("Paid")} disabled={saving} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-green-700">Mark Paid</button>
-          )}
+    <div style={{ minHeight: "100vh", background: BG, fontFamily: "Source Sans 3, sans-serif" }}>
+      {/* Toolbar */}
+      <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 24px", background: "#fff", borderBottom: "1px solid rgba(0,0,0,0.08)", position: "sticky", top: 0, zIndex: 10 }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "#6b6b67", fontWeight: 600, fontSize: 14 }}>
+          <ArrowLeft size={16} />All Invoices
+        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: sc.bg, color: sc.text }}>{inv.status}</span>
           {inv.status === "Draft" && (
-            <button onClick={() => updateStatus("Sent")} disabled={saving} className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-blue-700">Mark Sent</button>
+            <button onClick={markSent} disabled={saving} style={{ padding: "8px 16px", borderRadius: 10, background: "#1d4ed8", color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif" }}>
+              Mark Sent
+            </button>
           )}
-          <button onClick={() => window.print()} className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-700 flex items-center gap-1"><Printer className="w-3.5 h-3.5" />Print</button>
+          {["Sent","Partial","Overdue"].includes(inv.status) && (
+            <button onClick={() => setShowPayment(true)} style={{ padding: "8px 16px", borderRadius: 10, background: GREEN, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif" }}>
+              + Record Payment
+            </button>
+          )}
+          <button onClick={() => window.print()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: BLACK, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif" }}>
+            <Printer size={14} />Print / PDF
+          </button>
         </div>
       </div>
 
-      <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
-        <div className="bg-red-600 text-white p-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-black">MAHONEY EXPRESS, INC.</h1>
-            <p className="text-red-200 text-sm">Time-Critical Messenger & Delivery Services</p>
-          </div>
-          <div className="text-right">
-            <p className="text-red-200 text-xs uppercase">Invoice</p>
-            <p className="text-2xl font-black">{inv.invoice_number}</p>
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full mt-1 inline-block ${STATUS_COLORS[inv.status]}`}>{inv.status}</span>
-          </div>
-        </div>
-
-        <div className="p-6 grid grid-cols-2 gap-6 border-b border-gray-100">
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase mb-1">Bill To</p>
-            <p className="font-bold text-gray-800">{inv.customer_name}</p>
-          </div>
-          <div className="text-right">
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between gap-4"><span className="text-gray-500">Issue Date</span><span>{inv.issue_date}</span></div>
-              <div className="flex justify-between gap-4"><span className="text-gray-500">Due Date</span><span>{inv.due_date}</span></div>
-              <div className="flex justify-between gap-4"><span className="text-gray-500">Terms</span><span>{inv.payment_terms}</span></div>
+      {/* Payment modal */}
+      {showPayment && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: 340, boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>
+            <h3 style={{ fontFamily: "Barlow, sans-serif", fontSize: 17, fontWeight: 800, color: BLACK, marginBottom: 4 }}>Record Payment</h3>
+            <p style={{ fontSize: 13, color: "#6b6b67", marginBottom: 18 }}>Balance due: <strong style={{ color: "#ef4444" }}>{fmt(inv.balance_due)}</strong></p>
+            <label style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#6b6b67", display: "block", marginBottom: 6, fontFamily: "Barlow, sans-serif" }}>Amount Received ($)</label>
+            <input autoFocus type="number" value={payment} onChange={e => setPayment(e.target.value)}
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid rgba(0,0,0,0.12)", fontSize: 18, fontWeight: 700, color: BLACK, outline: "none", marginBottom: 16 }}
+              placeholder="0.00" onKeyDown={e => e.key === "Enter" && recordPayment()} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowPayment(false)} style={{ flex: 1, padding: 10, borderRadius: 10, border: "1px solid rgba(0,0,0,0.1)", background: "#fff", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+              <button onClick={recordPayment} disabled={saving} style={{ flex: 1, padding: 10, borderRadius: 10, background: GREEN, color: "#fff", border: "none", fontWeight: 800, cursor: "pointer", fontFamily: "Barlow, sans-serif", fontSize: 14 }}>
+                {saving ? "Saving…" : "Record"}
+              </button>
             </div>
           </div>
         </div>
+      )}
 
-        <div className="p-6">
-          <table className="w-full text-sm mb-6">
-            <thead><tr className="border-b-2 border-gray-200">
-              <th className="text-left pb-2 font-semibold text-gray-600">Description</th>
-              <th className="text-right pb-2 font-semibold text-gray-600">Amount</th>
-            </tr></thead>
-            <tbody>
-              {lineItems.length > 0 ? lineItems.map((li, i) => (
-                <tr key={i} className="border-b border-gray-50">
-                  <td className="py-2 text-gray-700">{li.description}</td>
-                  <td className="py-2 text-right font-medium">{fmt(li.amount)}</td>
+      {/* ── PRINTABLE INVOICE ────────────────────────────────── */}
+      <div style={{ maxWidth: 760, margin: "28px auto", padding: "0 20px 60px" }}>
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 20px rgba(0,0,0,0.08)" }}>
+
+          {/* Green accent strip */}
+          <div style={{ height: 5, background: "linear-gradient(90deg,#0fa14a,#009549)" }} />
+
+          {/* Invoice Header */}
+          <div style={{ background: BLACK, padding: "22px 30px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+            <img src={LOGO_HEADER} alt="Mahoney Express" style={{ height: 52, width: "auto" }} />
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontSize: 10, color: "#888", margin: 0, textTransform: "uppercase", letterSpacing: "0.12em", fontFamily: "Barlow, sans-serif" }}>Invoice</p>
+              <p style={{ fontSize: 24, fontWeight: 800, color: GREEN, margin: "2px 0", fontFamily: "Barlow, sans-serif" }}>{inv.invoice_number}</p>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 12px", borderRadius: 20, background: sc.bg, color: sc.text }}>{inv.status}</span>
+            </div>
+          </div>
+
+          {/* Bill To / Invoice Info */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderBottom: "1px solid #e8e8e8" }}>
+            {/* Bill To */}
+            <div style={{ padding: "22px 30px", borderRight: "1px solid #e8e8e8" }}>
+              <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, margin: "0 0 10px", fontFamily: "Barlow, sans-serif" }}>Bill To</p>
+              <p style={{ fontSize: 17, fontWeight: 800, color: BLACK, margin: "0 0 4px", fontFamily: "Barlow, sans-serif" }}>{inv.customer_name || "—"}</p>
+              <p style={{ fontSize: 13, color: "#6b6b67", margin: 0, lineHeight: 1.5 }}>
+                {inv.notes ? "" : "accounting@mahoneyexpress.com"}
+              </p>
+            </div>
+            {/* Invoice Details */}
+            <div style={{ padding: "22px 30px" }}>
+              <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, margin: "0 0 10px", fontFamily: "Barlow, sans-serif" }}>Invoice Details</p>
+              {[
+                ["Invoice Number", inv.invoice_number],
+                ["Issue Date", inv.issue_date],
+                ["Due Date", inv.due_date],
+                ["Payment Terms", inv.payment_terms],
+              ].map(([l,v]) => (
+                <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
+                  <span style={{ color: "#6b6b67" }}>{l}</span>
+                  <span style={{ fontWeight: 600, color: BLACK }}>{v || "—"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Line Items Table */}
+          <div style={{ padding: "22px 30px", borderBottom: "1px solid #e8e8e8" }}>
+            <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, margin: "0 0 14px", fontFamily: "Barlow, sans-serif" }}>Services Rendered</p>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: BLACK }}>
+                  <th style={{ textAlign: "left", padding: "8px 12px", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#fff", fontFamily: "Barlow, sans-serif" }}>Job #</th>
+                  <th style={{ textAlign: "left", padding: "8px 12px", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#fff", fontFamily: "Barlow, sans-serif" }}>Description</th>
+                  <th style={{ textAlign: "right", padding: "8px 12px", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: GREEN, fontFamily: "Barlow, sans-serif" }}>Amount</th>
                 </tr>
-              )) : (
-                <tr><td colSpan={2} className="py-3 text-center text-gray-400 text-sm">No line items</td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {lineItems.length > 0 ? lineItems.map((item, i) => (
+                  <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9f9f9", borderBottom: "1px solid #f0f0f0" }}>
+                    <td style={{ padding: "10px 12px", fontFamily: "monospace", fontWeight: 700, fontSize: 12, color: GREEN }}>{item.job_number || "—"}</td>
+                    <td style={{ padding: "10px 12px", color: "#6b6b67" }}>{item.description}</td>
+                    <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, color: BLACK, fontFamily: "Barlow, sans-serif" }}>{fmt(item.amount)}</td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={3} style={{ padding: "16px 12px", color: "#b0b2b7", textAlign: "center" }}>No line items</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-          <div className="flex justify-end">
-            <div className="w-56 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{fmt(inv.subtotal)}</span></div>
-              {(inv.tax_amount || 0) > 0 && <div className="flex justify-between"><span className="text-gray-500">Tax ({inv.tax_rate}%)</span><span>{fmt(inv.tax_amount)}</span></div>}
-              <div className="flex justify-between font-bold text-base border-t pt-2"><span>Total</span><span>{fmt(inv.total_amount)}</span></div>
-              {(inv.amount_paid || 0) > 0 && <div className="flex justify-between text-green-600"><span>Paid</span><span>-{fmt(inv.amount_paid)}</span></div>}
-              <div className={`flex justify-between font-bold ${(inv.balance_due||0) > 0 ? "text-red-600" : "text-green-600"}`}><span>Balance Due</span><span>{fmt(inv.balance_due)}</span></div>
+          {/* Totals */}
+          <div style={{ display: "flex", justifyContent: "flex-end", padding: "20px 30px", borderBottom: "1px solid #e8e8e8" }}>
+            <div style={{ width: 280 }}>
+              {[
+                ["Subtotal", fmt(inv.subtotal), BLACK, false],
+                inv.tax_amount > 0 ? [`Tax (${inv.tax_rate || 0}%)`, fmt(inv.tax_amount), BLACK, false] : null,
+                ["Total", fmt(inv.total_amount), BLACK, true],
+                (inv.amount_paid||0) > 0 ? ["Amount Paid", `(${fmt(inv.amount_paid)})`, GREEN, false] : null,
+                ["Balance Due", fmt(inv.balance_due), (inv.balance_due||0) > 0 ? "#ef4444" : GREEN, true],
+              ].filter(Boolean).map(([l,v,c,bold]) => (
+                <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: bold ? "10px 0 0" : "5px 0", borderTop: bold ? "2px solid #e8e8e8" : "none", marginTop: bold ? 4 : 0 }}>
+                  <span style={{ fontSize: bold ? 15 : 13, fontWeight: bold ? 800 : 500, color: bold ? BLACK : "#6b6b67", fontFamily: bold ? "Barlow, sans-serif" : "inherit" }}>{l}</span>
+                  <span style={{ fontSize: bold ? 16 : 13, fontWeight: bold ? 800 : 600, color: c, fontFamily: "Barlow, sans-serif" }}>{v}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {inv.notes && <div className="mt-6 bg-gray-50 rounded-lg p-4 text-sm text-gray-600">{inv.notes}</div>}
+          {/* Notes */}
+          {inv.notes && (
+            <div style={{ padding: "18px 30px", borderBottom: "1px solid #e8e8e8", background: "#fafafa" }}>
+              <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#6b6b67", margin: "0 0 6px", fontFamily: "Barlow, sans-serif" }}>Notes</p>
+              <p style={{ fontSize: 13, color: BLACK, margin: 0, lineHeight: 1.6 }}>{inv.notes}</p>
+            </div>
+          )}
+
+          {/* Payment Instructions */}
+          <div style={{ padding: "16px 30px", background: "#f9f9f9", borderBottom: "1px solid #e8e8e8" }}>
+            <p style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, margin: "0 0 6px", fontFamily: "Barlow, sans-serif" }}>Remit Payment To</p>
+            <p style={{ fontSize: 13, color: "#6b6b67", margin: 0, lineHeight: 1.6 }}>
+              Mahoney Express, Inc. · 1615 N Newland Ave · Chicago, IL 60707<br />
+              📞 +1 708.955.9082 · ✉ accounting@mahoneyexpress.com
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div style={{ background: BLACK, padding: "12px 30px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <p style={{ fontSize: 11, color: "#555", margin: 0 }}>Thank you for your business!</p>
+            <p style={{ fontSize: 11, color: GREEN, margin: 0, fontStyle: "italic", fontFamily: "Barlow, sans-serif", fontWeight: 700 }}>When tomorrow's too late!</p>
+          </div>
         </div>
       </div>
+
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+        }
+      `}</style>
     </div>
   );
 }

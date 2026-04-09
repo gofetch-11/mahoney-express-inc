@@ -8,3 +8,4 @@ export const processDhlPdfsWithOcr = base44.functions.processDhlPdfsWithOcr;
 export const saveDhlTickets = base44.functions.saveDhlTickets;
 export const processDhlMonitor = base44.functions.processDhlMonitor;
 export const saveDhlMonitorBatch = base44.functions.saveDhlMonitorBatch;
+export const saveDhlRecordsFromMonitor = base44.functions.saveDhlRecordsFromMonitor;

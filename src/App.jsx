@@ -9,6 +9,7 @@ import Jobs from './pages/Jobs';
 import Layout from './pages/Layout';
 import NewJob from './pages/NewJob';
 import Payroll from './pages/Payroll';
+import DriverReport from './pages/DriverReport';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/Layout" element={<Layout />} />
         <Route path="/NewJob" element={<NewJob />} />
         <Route path="/Payroll" element={<Payroll />} />
+        <Route path="/DriverReport" element={<DriverReport />} />
       </Routes>
     </BrowserRouter>
   )

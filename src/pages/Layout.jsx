@@ -4,6 +4,9 @@ import {
   FileText, DollarSign, BarChart2, Menu, Plus, X
 } from "lucide-react";
 
+const LOGO = "https://media.base44.com/images/public/69cb07fb94b4627f0bd76151/a863be72e_MahoneyExpressInc-Header.png";
+const CITY_LOGO = "https://media.base44.com/images/public/69cb07fb94b4627f0bd76151/b87197ae9_MahoneyExpressInc-CityLogo4.png";
+
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/new-job", label: "New Job", icon: Plus, highlight: true },
@@ -23,41 +26,51 @@ export default function Layout({ children, currentPath }) {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
       <style>{`
-        * { font-family: 'Source Sans 3', sans-serif; }
-        h1,h2,h3,h4,h5,h6,.font-barlow { font-family: 'Barlow', sans-serif; }
+        * { font-family: 'Source Sans 3', sans-serif; box-sizing: border-box; }
+        h1,h2,h3,h4,h5,.font-barlow { font-family: 'Barlow', sans-serif; }
+        body { background: #f4f4f2 !important; margin: 0; }
         .me-sidebar { background: #060204; }
-        .me-green { background: #0fa14a; }
-        .me-green-text { color: #0fa14a; }
-        .me-accent { background: linear-gradient(90deg,#0fa14a,#009549); }
-        .me-nav-active { background: rgba(15,161,74,0.18); color: #0fa14a; }
-        .me-nav-highlight { background: #0fa14a; color: #fff; }
-        .me-nav-highlight:hover { background: #009549; }
-        .me-nav-item { color: #b0b2b7; }
-        .me-nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
-        body { background: #f4f4f2 !important; }
+        .nav-active { background: rgba(15,161,74,0.15); color: #0fa14a !important; border-left: 3px solid #0fa14a; }
+        .nav-highlight { background: #0fa14a; color: #fff !important; border-radius: 10px; }
+        .nav-highlight:hover { background: #009549; }
+        .nav-item { color: #8a8a8a; border-left: 3px solid transparent; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff !important; }
+        .me-green { color: #0fa14a; }
+        select.me-input, textarea.me-input { resize: vertical; }
       `}</style>
 
-      <div className="flex min-h-screen" style={{ background: "#f4f4f2" }}>
+      <div style={{ display: "flex", minHeight: "100vh", background: "#f4f4f2" }}>
         {/* Sidebar */}
-        <aside className={`fixed inset-y-0 left-0 z-40 w-56 me-sidebar flex flex-col transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:flex`}>
-          {/* Green accent strip */}
-          <div className="h-1 me-accent flex-shrink-0" />
+        <aside
+          className="me-sidebar"
+          style={{
+            width: 220,
+            display: "flex",
+            flexDirection: "column",
+            flexShrink: 0,
+            position: "fixed",
+            top: 0, left: 0, bottom: 0,
+            zIndex: 40,
+            transform: open ? "translateX(0)" : undefined,
+            transition: "transform 0.2s",
+            overflowY: "auto",
+          }}
+          data-open={open}
+        >
+          {/* Green top strip */}
+          <div style={{ height: 4, background: "linear-gradient(90deg,#0fa14a,#009549)", flexShrink: 0 }} />
 
-          {/* Logo */}
-          <div className="px-5 py-5 border-b flex-shrink-0" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 me-green rounded-lg flex items-center justify-center flex-shrink-0">
-                <Truck className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="font-barlow font-bold text-white text-sm leading-tight tracking-wide" style={{ fontFamily: "Barlow, sans-serif" }}>MAHONEY EXPRESS</p>
-                <p className="text-xs leading-tight" style={{ color: "#b0b2b7" }}>INC.</p>
-              </div>
-            </div>
+          {/* Logo area */}
+          <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
+            <img
+              src={LOGO}
+              alt="Mahoney Express"
+              style={{ width: "100%", maxWidth: 180, height: "auto", display: "block" }}
+            />
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
             {NAV.map(item => {
               const Icon = item.icon;
               const active = currentPath === item.href;
@@ -65,41 +78,73 @@ export default function Layout({ children, currentPath }) {
                 <a
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                    item.highlight
-                      ? "me-nav-highlight"
-                      : active
-                        ? "me-nav-active"
-                        : "me-nav-item"
-                  }`}
-                  style={{ fontFamily: "Barlow, sans-serif", fontWeight: 600 }}
+                  className={item.highlight ? "nav-highlight" : active ? "nav-active" : "nav-item"}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "9px 12px",
+                    borderRadius: item.highlight ? 10 : 0,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    transition: "all 0.15s",
+                    fontFamily: "Barlow, sans-serif",
+                    marginBottom: item.highlight ? 6 : 0,
+                  }}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <Icon size={16} style={{ flexShrink: 0 }} />
                   {item.label}
                 </a>
               );
             })}
           </nav>
 
-          <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="text-xs" style={{ color: "#b0b2b7" }}>© 2026 Mahoney Express, Inc.</p>
+          {/* City logo at bottom */}
+          <div style={{ padding: "12px 16px 16px", borderTop: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
+            <img src={CITY_LOGO} alt="" style={{ width: "100%", opacity: 0.5, display: "block" }} />
+            <p style={{ color: "#555", fontSize: 10, marginTop: 8, fontFamily: "Barlow, sans-serif", letterSpacing: "0.05em" }}>
+              1615 N Newland Ave · Chicago IL 60707
+            </p>
           </div>
         </aside>
 
         {/* Mobile overlay */}
-        {open && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setOpen(false)} />}
+        {open && (
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 30 }}
+          />
+        )}
 
-        {/* Main */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Mobile header */}
-          <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b sticky top-0 z-20" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
-            <button onClick={() => setOpen(true)} className="p-1.5 hover:bg-gray-100 rounded-lg">
-              <Menu className="w-5 h-5 text-gray-600" />
+        {/* Main content */}
+        <div style={{ flex: 1, marginLeft: 220, display: "flex", flexDirection: "column", minWidth: 0 }}>
+          {/* Mobile top bar */}
+          <header style={{
+            display: "none",
+            alignItems: "center",
+            gap: 12,
+            padding: "10px 16px",
+            background: "#060204",
+            position: "sticky",
+            top: 0,
+            zIndex: 20,
+          }} className="mobile-header">
+            <button onClick={() => setOpen(true)} style={{ color: "#fff", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+              <Menu size={22} />
             </button>
-            <div className="h-1 w-5 me-accent rounded-full" />
-            <span className="font-bold text-gray-900 text-sm" style={{ fontFamily: "Barlow, sans-serif" }}>Mahoney Express</span>
+            <img src={LOGO} alt="Mahoney Express" style={{ height: 28, width: "auto" }} />
           </header>
-          <main className="flex-1">{children}</main>
+
+          <style>{`
+            @media (max-width: 768px) {
+              aside { transform: ${open ? "translateX(0)" : "translateX(-100%)"}; }
+              .mobile-header { display: flex !important; }
+              div[style*="marginLeft: 220"] { margin-left: 0 !important; }
+            }
+          `}</style>
+
+          <main style={{ flex: 1 }}>{children}</main>
         </div>
       </div>
     </>

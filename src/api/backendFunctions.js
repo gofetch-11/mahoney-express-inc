@@ -11,3 +11,7 @@ export const saveDhlRecordsFromMonitor = base44.functions.saveDhlRecordsFromMoni
 export const backfillAddresses = base44.functions.backfillAddresses;
 export const saveDhlBatchFromMonitor = base44.functions.saveDhlBatchFromMonitor;
 export const saveDhlBatch = base44.functions.saveDhlBatch;
+export const backfillAddressesTextract = base44.functions.backfillAddressesTextract;
+export const saveDhlRecords = base44.functions.saveDhlRecords;
+export const saveDhlBatchFromAutomation = base44.functions.saveDhlBatchFromAutomation;
+export const backfill = base44.functions.backfill;

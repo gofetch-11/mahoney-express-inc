@@ -21,10 +21,14 @@ import VehicleMaintenance from './pages/VehicleMaintenance';
 import LiveDispatch from './pages/LiveDispatch';
 import DriverAnalytics from './pages/DriverAnalytics';
 import CustomerPortal from './pages/CustomerPortal';
+
 import PageNotFound from './lib/PageNotFound';
+
+const PUBLIC_PATHS = ['/DriverPortal', '/CustomerPortal'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const isPublic = PUBLIC_PATHS.some(p => window.location.pathname.startsWith(p));
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -34,7 +38,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (authError) {
+  if (!isPublic && authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {

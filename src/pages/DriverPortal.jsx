@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { calculateRoute } from "@/functions/calculateRoute";
 import { Driver, Job } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
-import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X } from "lucide-react";
+import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X, MessageSquare } from "lucide-react";
+import JobMessaging from "../components/JobMessaging";
 import PodCaptureModal from "../components/PodCaptureModal";
 
 const GREEN = "#0fa14a";
@@ -38,6 +39,7 @@ export default function DriverPortal() {
   const [routeSummary, setRouteSummary] = useState("");
   const [routeMiles, setRouteMiles] = useState(null);
   const [optimizing, setOptimizing] = useState(false);
+  const [messagingJob, setMessagingJob] = useState(null);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 
@@ -363,18 +365,20 @@ export default function DriverPortal() {
 
                   {/* Status Actions */}
                   {job.status !== "Delivered" && job.status !== "Cancelled" && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+                    <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+                      <button onClick={() => setMessagingJob(job)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", borderRadius: 12, background: "rgba(59,130,246,0.15)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.3)", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif", flex: 1, minWidth: 120 }}>
+                        <MessageSquare size={15} />Message
+                      </button>
                       {job.status !== "In Transit" && (
-                        <button onClick={() => updateStatus(job, "In Transit")} disabled={isUpdating}
+                        <button onClick={() => updateStatus(job, "In Transit")} disabled={isUpdating} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", borderRadius: 12, background: "rgba(139,92,246,0.15)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.3)", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif", flex: 1, minWidth: 120 }}
                           style={{ padding: "12px", borderRadius: 12, background: "rgba(139,92,246,0.15)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.3)", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isUpdating ? 0.5 : 1 }}>
                           <Truck size={15} />{isUpdating ? "Updating…" : "Mark In Transit"}
                         </button>
                       )}
-                      <button onClick={() => handleDelivered(job)} disabled={isUpdating}
-                        style={{ padding: "12px", borderRadius: 12, background: "rgba(15,161,74,0.15)", color: GREEN, border: `1px solid rgba(15,161,74,0.3)`, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isUpdating ? 0.5 : 1, gridColumn: job.status === "In Transit" ? "span 2" : "auto" }}>
+                      <button onClick={() => handleDelivered(job)} disabled={isUpdating} style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", borderRadius: 12, background: "rgba(15,161,74,0.15)", color: GREEN, border: `1px solid rgba(15,161,74,0.3)`, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif", opacity: isUpdating ? 0.5 : 1, flex: 1, minWidth: 120 }}>
                         <CheckCircle size={15} />{isUpdating ? "Updating…" : "Mark Delivered"}
                       </button>
-                    </div>
+                      </div>
                   )}
 
                   {/* POD Upload */}
@@ -408,6 +412,14 @@ export default function DriverPortal() {
           job={podJob}
           onConfirm={(urls) => completePod(podJob, urls)}
           onCancel={() => setPodJob(null)}
+        />
+      )}
+
+      {messagingJob && (
+        <JobMessaging
+          job={messagingJob}
+          driver={selectedDriver}
+          onClose={() => setMessagingJob(null)}
         />
       )}
     </div>

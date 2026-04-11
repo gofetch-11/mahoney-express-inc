@@ -1,0 +1,41 @@
+{
+  "name": "JobMessage",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "title": "Job ID"
+    },
+    "driver_id": {
+      "type": "string",
+      "title": "Driver ID"
+    },
+    "sender_role": {
+      "type": "string",
+      "title": "Sender Role",
+      "enum": [
+        "dispatcher",
+        "driver"
+      ],
+      "default": "dispatcher"
+    },
+    "sender_name": {
+      "type": "string",
+      "title": "Sender Name"
+    },
+    "message": {
+      "type": "string",
+      "title": "Message"
+    },
+    "read_by_driver": {
+      "type": "boolean",
+      "title": "Read by Driver",
+      "default": false
+    }
+  },
+  "required": [
+    "job_id",
+    "driver_id",
+    "message"
+  ]
+}

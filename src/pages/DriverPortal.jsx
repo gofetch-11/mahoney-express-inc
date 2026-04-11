@@ -3,6 +3,7 @@ import { calculateRoute } from "@/functions/calculateRoute";
 import { Driver, Job } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
 import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X } from "lucide-react";
+import PodCaptureModal from "../components/PodCaptureModal";
 
 const GREEN = "#0fa14a";
 const BG = "#0e1012";
@@ -32,6 +33,7 @@ export default function DriverPortal() {
   const [updating, setUpdating] = useState(null);
   const [uploadingJobId, setUploadingJobId] = useState(null);
   const [toast, setToast] = useState("");
+  const [podJob, setPodJob] = useState(null);
   const [routeOptimized, setRouteOptimized] = useState(false);
   const [routeSummary, setRouteSummary] = useState("");
   const [routeMiles, setRouteMiles] = useState(null);
@@ -85,6 +87,35 @@ export default function DriverPortal() {
       showToast("Optimization failed: " + e.message);
     }
     setOptimizing(false);
+  }
+
+  async function handleDelivered(job) {
+    // Show POD modal before marking delivered
+    setPodJob(job);
+  }
+
+  async function completePod(job, { photoUrl, signatureUrl }) {
+    setPodJob(null);
+    setUpdating(job.id);
+    const podPhotos = photoUrl
+      ? JSON.stringify([...(job.pod_photos ? JSON.parse(job.pod_photos) : []), photoUrl])
+      : job.pod_photos;
+    await Job.update(job.id, {
+      status: "Delivered",
+      pod_photos: podPhotos || null,
+      pod_signature: signatureUrl || null,
+      pod_captured_at: new Date().toISOString(),
+    });
+    setJobs(js => js.map(j => j.id === job.id ? { ...j, status: "Delivered", pod_signature: signatureUrl, pod_photos: podPhotos } : j));
+    showToast(`✓ ${job.job_number} delivered with POD`);
+    setUpdating(null);
+    // Push GPS
+    if (selectedDriver && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => updateDriverLocation({ driver_id: selectedDriver.id, lat: pos.coords.latitude, lng: pos.coords.longitude, job_id: job.id, job_number: job.job_number, is_on_route: false }).catch(() => {}),
+        () => {}
+      );
+    }
   }
 
   async function updateStatus(job, newStatus) {
@@ -339,7 +370,7 @@ export default function DriverPortal() {
                           <Truck size={15} />{isUpdating ? "Updating…" : "Mark In Transit"}
                         </button>
                       )}
-                      <button onClick={() => updateStatus(job, "Delivered")} disabled={isUpdating}
+                      <button onClick={() => handleDelivered(job)} disabled={isUpdating}
                         style={{ padding: "12px", borderRadius: 12, background: "rgba(15,161,74,0.15)", color: GREEN, border: `1px solid rgba(15,161,74,0.3)`, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: isUpdating ? 0.5 : 1, gridColumn: job.status === "In Transit" ? "span 2" : "auto" }}>
                         <CheckCircle size={15} />{isUpdating ? "Updating…" : "Mark Delivered"}
                       </button>
@@ -371,6 +402,14 @@ export default function DriverPortal() {
           );
         })}
       </div>
+
+      {podJob && (
+        <PodCaptureModal
+          job={podJob}
+          onConfirm={(urls) => completePod(podJob, urls)}
+          onCancel={() => setPodJob(null)}
+        />
+      )}
     </div>
   );
 }

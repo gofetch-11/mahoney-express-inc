@@ -137,6 +137,14 @@
     "pod_photos": {
       "type": "string",
       "title": "POD Photos (JSON)"
+    },
+    "pod_signature": {
+      "type": "string",
+      "title": "POD Signature URL"
+    },
+    "pod_captured_at": {
+      "type": "string",
+      "title": "POD Captured At"
     }
   },
   "required": []

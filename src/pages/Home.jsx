@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Job, Invoice, Driver, Customer, Expense } from "@/api/entities";
-import { Clock, Truck, CheckCircle, Users, TrendingUp, TrendingDown, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Package } from "lucide-react";
+import { Clock, Truck, CheckCircle, Users, TrendingUp, TrendingDown, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Package, MapPin } from "lucide-react";
+import MapView from "../components/MapView";
 
 const GREEN = "#0fa14a";
 const BG = "#0e1012";
@@ -26,6 +27,7 @@ const STATUS_COLORS = {
 export default function Home() {
   const [stats, setStats] = useState({ pendingJobs:0, inTransitJobs:0, deliveredToday:0, activeDrivers:0, openInvoiceAmount:0, overdueAmount:0, revenueThisMonth:0, expensesThisMonth:0, totalJobs:0 });
   const [recentJobs, setRecentJobs] = useState([]);
+  const [inTransitJobs, setInTransitJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadDashboard(); }, []);
@@ -48,6 +50,7 @@ export default function Home() {
         totalJobs: jobs.length,
       });
       setRecentJobs(jobs.sort((a,b)=>new Date(b.created_date)-new Date(a.created_date)).slice(0,8));
+      setInTransitJobs(jobs.filter(j => j.status === "In Transit"));
     } catch (e) {
       console.error("Dashboard load error:", e);
     } finally {
@@ -151,6 +154,22 @@ export default function Home() {
               <span style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.07em", color:MUTED, fontFamily:"Barlow, sans-serif" }}>Overdue A/R</span>
             </div>
             <p style={{ fontSize:26, fontWeight:800, color:"#f87171", margin:0, fontFamily:"Barlow, sans-serif" }}>{fmt(stats.overdueAmount)}</p>
+          </div>
+        </div>
+
+        {/* Map View */}
+        <div style={{ ...card, overflow:"hidden", marginBottom:24 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 20px", borderBottom:`1px solid ${BORDER}` }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <MapPin size={16} style={{ color:GREEN }} />
+              <h2 style={{ fontSize:15, fontWeight:700, margin:0, color:TEXT, fontFamily:"Barlow, sans-serif" }}>Live Dispatch Map</h2>
+            </div>
+            <span style={{ fontSize:12, fontWeight:700, padding:"3px 10px", borderRadius:20, background:"rgba(139,92,246,0.15)", color:"#a78bfa" }}>
+              {inTransitJobs.length} In Transit
+            </span>
+          </div>
+          <div style={{ padding:16 }}>
+            <MapView jobs={inTransitJobs} />
           </div>
         </div>
 

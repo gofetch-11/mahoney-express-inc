@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X, MessageCircle } from "lucide-react";
 import PodCaptureModal from "../components/PodCaptureModal";
 import JobMessaging from "../components/JobMessaging";
+import SharePointUpload from "../components/SharePointUpload";
 
 const GREEN = "#0fa14a";
 const BG = "#0e1012";
@@ -383,8 +384,11 @@ export default function DriverPortal() {
                     </div>
                   )}
 
+                  {/* SharePoint Upload */}
+                  <SharePointUpload jobNumber={job.job_number} disabled={job.status === "Delivered"} />
+
                   {/* POD Upload */}
-                  <div>
+                  <div style={{ marginTop: 12 }}>
                     <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: MUTED, margin: "0 0 10px", fontFamily: "Barlow, sans-serif" }}>Proof of Delivery Photos</p>
                     {podPhotos.length > 0 && (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Job, Driver, Customer, Invoice } from "@/api/entities";
+import { ChevronDown } from "lucide-react";
 import { Plus, Search, Package, Upload, X, CheckCircle, AlertCircle, FileText, Download } from "lucide-react";
 
 const GREEN="#0fa14a"; const BG="#0e1012"; const SURFACE="#161a1d"; const SURFACE2="#1e2328";
@@ -102,6 +103,11 @@ export default function Jobs() {
     setLoading(false);
   }
 
+  async function updateJobStatus(jobId, newStatus) {
+    await Job.update(jobId, { status: newStatus });
+    setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: newStatus } : j));
+  }
+
   const counts = Object.keys(STATUS_CFG).reduce((acc,s) => { acc[s]=s==="All"?jobs.length:jobs.filter(j=>j.status===s).length; return acc; }, {});
 
   const downloadTemplate = () => {
@@ -181,7 +187,9 @@ export default function Jobs() {
                       <td style={{ padding:"12px 16px", fontWeight:600, color:TEXT }}>{job.customer_name||"—"}</td>
                       <td style={{ padding:"12px 16px", fontSize:12, color:MUTED }}>{job.pickup_city||"?"} → {job.delivery_city||"?"}</td>
                       <td style={{ padding:"12px 16px", color:job.driver_name?MUTED:"#fbbf24", fontSize:13 }}>{job.driver_name||"Unassigned"}</td>
-                      <td style={{ padding:"12px 16px" }}><span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20, background:sc.bg, color:sc.text }}>{job.status}</span></td>
+                      <td style={{ padding:"12px 16px" }}>
+                        <StatusPicker job={job} onUpdate={updateJobStatus} />
+                      </td>
                       <td style={{ padding:"12px 16px", fontWeight:700, color:TEXT, fontFamily:"Barlow, sans-serif" }}>{fmt(job.bill_rate)}</td>
                       <td style={{ padding:"12px 16px", color:"#f87171" }}>{fmt(job.driver_pay)}</td>
                       <td style={{ padding:"12px 16px", fontWeight:700, fontFamily:"Barlow, sans-serif", color:margin>=0?GREEN:"#f87171" }}>{fmt(margin)}</td>
@@ -421,6 +429,63 @@ function ImportModal({ onClose }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Status Picker ───────────────────────────────────────────────────────────
+const STATUS_FLOW = ["Pending", "Assigned", "In Transit", "Delivered", "Cancelled"];
+
+function StatusPicker({ job, onUpdate }) {
+  const [open, setOpen] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const ref = useRef();
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const sc = STATUS_CFG[job.status] || STATUS_CFG.Pending;
+
+  const handleSelect = async (status) => {
+    if (status === job.status) { setOpen(false); return; }
+    setUpdating(true);
+    setOpen(false);
+    await onUpdate(job.id, status);
+    setUpdating(false);
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        disabled={updating}
+        style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "3px 8px 3px 10px", borderRadius: 20, background: sc.bg, color: sc.text, border: `1px solid ${sc.text}33`, cursor: "pointer", opacity: updating ? 0.5 : 1, transition: "opacity 0.15s" }}
+      >
+        {updating ? "…" : job.status}
+        <ChevronDown size={11} style={{ opacity: 0.7 }} />
+      </button>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 100, background: "#1a2128", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, overflow: "hidden", boxShadow: "0 6px 20px rgba(0,0,0,0.5)", minWidth: 130 }}>
+          {STATUS_FLOW.map(s => {
+            const cfg = STATUS_CFG[s] || STATUS_CFG.Pending;
+            const isCurrent = s === job.status;
+            return (
+              <button key={s} onClick={() => handleSelect(s)}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: isCurrent ? "rgba(255,255,255,0.05)" : "transparent", color: cfg.text, fontSize: 12, fontWeight: isCurrent ? 700 : 500, cursor: "pointer", border: "none", textAlign: "left" }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                onMouseLeave={e => e.currentTarget.style.background = isCurrent ? "rgba(255,255,255,0.05)" : "transparent"}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: cfg.text, flexShrink: 0 }} />
+                {s}
+                {isCurrent && <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.5 }}>current</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

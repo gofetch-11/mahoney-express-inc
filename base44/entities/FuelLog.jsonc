@@ -14,29 +14,33 @@
       "type": "string",
       "title": "Date"
     },
+    "mileage": {
+      "type": "number",
+      "title": "Odometer (miles)"
+    },
     "gallons": {
       "type": "number",
       "title": "Gallons"
     },
     "price_per_gallon": {
       "type": "number",
-      "title": "Price per Gallon ($)"
+      "title": "Price Per Gallon ($)"
     },
     "total_cost": {
       "type": "number",
       "title": "Total Cost ($)"
     },
-    "mileage": {
-      "type": "number",
-      "title": "Odometer Reading"
-    },
-    "location": {
+    "station": {
       "type": "string",
       "title": "Station / Location"
     },
+    "driver_id": {
+      "type": "string",
+      "title": "Driver ID"
+    },
     "driver_name": {
       "type": "string",
-      "title": "Driver"
+      "title": "Driver Name"
     },
     "notes": {
       "type": "string",
@@ -45,8 +49,6 @@
   },
   "required": [
     "vehicle_id",
-    "date",
-    "gallons",
-    "total_cost"
+    "date"
   ]
 }

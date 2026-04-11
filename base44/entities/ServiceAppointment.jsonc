@@ -1,0 +1,73 @@
+{
+  "name": "ServiceAppointment",
+  "type": "object",
+  "properties": {
+    "vehicle_id": {
+      "type": "string",
+      "title": "Vehicle ID"
+    },
+    "unit_number": {
+      "type": "string",
+      "title": "Unit Number"
+    },
+    "service_type": {
+      "type": "string",
+      "title": "Service Type",
+      "enum": [
+        "Oil Change",
+        "Tire Rotation",
+        "Brake Service",
+        "Inspection",
+        "Transmission",
+        "Engine Repair",
+        "AC / Heat",
+        "Alignment",
+        "Other"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "title": "Scheduled Date"
+    },
+    "completed_date": {
+      "type": "string",
+      "title": "Completed Date"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "Scheduled",
+        "In Progress",
+        "Completed",
+        "Cancelled"
+      ],
+      "default": "Scheduled"
+    },
+    "mileage_at_service": {
+      "type": "number",
+      "title": "Mileage at Service"
+    },
+    "shop_name": {
+      "type": "string",
+      "title": "Shop / Vendor"
+    },
+    "cost": {
+      "type": "number",
+      "title": "Cost ($)"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "vehicle_id",
+    "service_type",
+    "scheduled_date"
+  ]
+}

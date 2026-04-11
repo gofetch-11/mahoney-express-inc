@@ -18,13 +18,13 @@
       "type": "number",
       "title": "Year"
     },
-    "license_plate": {
-      "type": "string",
-      "title": "License Plate"
-    },
     "vin": {
       "type": "string",
       "title": "VIN"
+    },
+    "license_plate": {
+      "type": "string",
+      "title": "License Plate"
     },
     "vehicle_type": {
       "type": "string",
@@ -45,7 +45,8 @@
       "enum": [
         "Active",
         "In Service",
-        "Out of Service"
+        "Out of Service",
+        "Retired"
       ],
       "default": "Active"
     },
@@ -53,13 +54,17 @@
       "type": "number",
       "title": "Current Mileage"
     },
+    "last_service_mileage": {
+      "type": "number",
+      "title": "Last Service Mileage"
+    },
     "next_service_mileage": {
       "type": "number",
-      "title": "Next Service Due (miles)"
+      "title": "Next Service Mileage"
     },
-    "next_service_date": {
+    "last_service_date": {
       "type": "string",
-      "title": "Next Service Date"
+      "title": "Last Service Date"
     },
     "assigned_driver_id": {
       "type": "string",

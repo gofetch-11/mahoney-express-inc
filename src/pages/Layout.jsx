@@ -18,7 +18,7 @@ const NAV = [
   { href: "/finances", label: "Finances", icon: BarChart2 },
   { href: "/driver-report", label: "Driver Report", icon: ClipboardList },
   { href: "/DriverPortal", label: "Driver Portal", icon: Smartphone },
-  { href: "/Maintenance", label: "Maintenance", icon: Wrench },
+  { href: "/VehicleMaintenance", label: "Maintenance", icon: Wrench },
 ];
 
 export default function Layout({ children, currentPath }) {

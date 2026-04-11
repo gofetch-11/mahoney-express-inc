@@ -20,7 +20,7 @@ const NAV = [
   { href: "/DriverPortal", label: "Driver Portal", icon: Smartphone },
   { href: "/VehicleMaintenance", label: "Maintenance", icon: Wrench },
   { href: "/LiveDispatch", label: "Live Map", icon: Radio },
-  { href: "/DriverAnalytics", label: "Driver Analytics", icon: Activity },
+  { href: "/DriverAnalytics", label: "Efficiency", icon: Activity },
 ];
 
 export default function Layout({ children, currentPath }) {

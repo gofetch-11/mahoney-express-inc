@@ -61,6 +61,7 @@ const AuthenticatedApp = () => {
       <Route path="/VehicleMaintenance" element={<VehicleMaintenance />} />
       <Route path="/LiveDispatch" element={<LiveDispatch />} />
       <Route path="/DriverAnalytics" element={<DriverAnalytics />} />
+      <Route path="/DriverAnalytics" element={<DriverAnalytics />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

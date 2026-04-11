@@ -31,23 +31,28 @@ export default function Home() {
   useEffect(() => { loadDashboard(); }, []);
 
   async function loadDashboard() {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const [jobs, drivers, invoices, expenses] = await Promise.all([Job.list(), Driver.list(), Invoice.list(), Expense.list()]);
-    setStats({
-      pendingJobs: jobs.filter(j=>j.status==="Pending").length,
-      inTransitJobs: jobs.filter(j=>j.status==="In Transit").length,
-      deliveredToday: jobs.filter(j=>j.status==="Delivered"&&j.updated_date>=todayStart).length,
-      activeDrivers: drivers.filter(d=>d.status==="Active").length,
-      openInvoiceAmount: invoices.filter(i=>["Sent","Partial","Overdue"].includes(i.status)).reduce((s,i)=>s+(i.balance_due||0),0),
-      overdueAmount: invoices.filter(i=>i.status==="Overdue").reduce((s,i)=>s+(i.balance_due||0),0),
-      revenueThisMonth: invoices.filter(i=>i.status==="Paid"&&i.issue_date>=monthStart).reduce((s,i)=>s+(i.total_amount||0),0),
-      expensesThisMonth: expenses.filter(e=>e.date>=monthStart).reduce((s,e)=>s+(e.amount||0),0),
-      totalJobs: jobs.length,
-    });
-    setRecentJobs(jobs.sort((a,b)=>new Date(b.created_date)-new Date(a.created_date)).slice(0,8));
-    setLoading(false);
+    try {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const [jobs, drivers, invoices, expenses] = await Promise.all([Job.list(), Driver.list(), Invoice.list(), Expense.list()]);
+      setStats({
+        pendingJobs: jobs.filter(j=>j.status==="Pending").length,
+        inTransitJobs: jobs.filter(j=>j.status==="In Transit").length,
+        deliveredToday: jobs.filter(j=>j.status==="Delivered"&&j.updated_date>=todayStart).length,
+        activeDrivers: drivers.filter(d=>d.status==="Active").length,
+        openInvoiceAmount: invoices.filter(i=>["Sent","Partial","Overdue"].includes(i.status)).reduce((s,i)=>s+(i.balance_due||0),0),
+        overdueAmount: invoices.filter(i=>i.status==="Overdue").reduce((s,i)=>s+(i.balance_due||0),0),
+        revenueThisMonth: invoices.filter(i=>i.status==="Paid"&&i.issue_date>=monthStart).reduce((s,i)=>s+(i.total_amount||0),0),
+        expensesThisMonth: expenses.filter(e=>e.date>=monthStart).reduce((s,e)=>s+(e.amount||0),0),
+        totalJobs: jobs.length,
+      });
+      setRecentJobs(jobs.sort((a,b)=>new Date(b.created_date)-new Date(a.created_date)).slice(0,8));
+    } catch (e) {
+      console.error("Dashboard load error:", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (loading) return (

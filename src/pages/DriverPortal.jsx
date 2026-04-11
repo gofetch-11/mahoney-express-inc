@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X, MessageCircle } from "lucide-react";
 import PodCaptureModal from "../components/PodCaptureModal";
 import JobMessaging from "../components/JobMessaging";
-import SharePointUpload from "../components/SharePointUpload";
+import ProofOfDeliveryUpload from "../components/ProofOfDeliveryUpload";
 
 const GREEN = "#0fa14a";
 const BG = "#0e1012";
@@ -41,6 +41,7 @@ export default function DriverPortal() {
   const [routeMiles, setRouteMiles] = useState(null);
   const [optimizing, setOptimizing] = useState(false);
   const [messagingJob, setMessagingJob] = useState(null);
+  const [sharePointJob, setSharePointJob] = useState(null);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 
@@ -384,12 +385,9 @@ export default function DriverPortal() {
                     </div>
                   )}
 
-                  {/* SharePoint Upload */}
-                  <SharePointUpload jobNumber={job.job_number} disabled={job.status === "Delivered"} />
-
-                  {/* POD Upload */}
-                  <div style={{ marginTop: 12 }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: MUTED, margin: "0 0 10px", fontFamily: "Barlow, sans-serif" }}>Proof of Delivery Photos</p>
+                  {/* POD Upload — SharePoint */}
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: MUTED, margin: "0 0 10px", fontFamily: "Barlow, sans-serif" }}>Proof of Delivery</p>
                     {podPhotos.length > 0 && (
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
                         {podPhotos.map((url, i) => (
@@ -399,12 +397,11 @@ export default function DriverPortal() {
                         ))}
                       </div>
                     )}
-                    <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", borderRadius: 12, background: SURFACE, border: `1px dashed rgba(255,255,255,0.15)`, cursor: isUploading ? "not-allowed" : "pointer", color: MUTED, fontSize: 13, fontWeight: 600 }}>
-                      <Camera size={15} style={{ color: isUploading ? MUTED : GREEN }} />
-                      {isUploading ? "Uploading…" : "Upload Photo"}
-                      <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} disabled={isUploading}
-                        onChange={e => uploadPOD(job, e.target.files[0])} />
-                    </label>
+                    <button onClick={() => setSharePointJob(job)} disabled={isUploading}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", borderRadius: 12, background: SURFACE, border: `1px dashed rgba(255,255,255,0.15)`, cursor: isUploading ? "not-allowed" : "pointer", color: MUTED, fontSize: 13, fontWeight: 600, width: "100%", justifyContent: "center" }}>
+                      <Upload size={15} style={{ color: isUploading ? MUTED : GREEN }} />
+                      {isUploading ? "Uploading…" : "Upload to SharePoint"}
+                    </button>
                   </div>
                 </div>
               )}
@@ -427,6 +424,21 @@ export default function DriverPortal() {
           driverName={selectedDriver ? `${selectedDriver.first_name} ${selectedDriver.last_name}` : "Driver"}
           isDriver={true}
           onClose={() => setMessagingJob(null)}
+        />
+      )}
+
+      {sharePointJob && (
+        <ProofOfDeliveryUpload
+          job={sharePointJob}
+          onSuccess={(fileUrl) => {
+            const existing = sharePointJob.pod_photos ? JSON.parse(sharePointJob.pod_photos) : [];
+            const updated = [...existing, fileUrl];
+            Job.update(sharePointJob.id, { pod_photos: JSON.stringify(updated) }).then(() => {
+              setJobs(js => js.map(j => j.id === sharePointJob.id ? { ...j, pod_photos: JSON.stringify(updated) } : j));
+              showToast("✓ Uploaded to SharePoint!");
+            });
+          }}
+          onClose={() => setSharePointJob(null)}
         />
       )}
     </div>

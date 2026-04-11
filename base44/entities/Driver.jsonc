@@ -33,11 +33,11 @@
     },
     "vehicle_make": {
       "type": "string",
-      "title": "Vehicle Make"
+      "title": "Make"
     },
     "vehicle_model": {
       "type": "string",
-      "title": "Vehicle Model"
+      "title": "Model"
     },
     "license_plate": {
       "type": "string",
@@ -71,29 +71,21 @@
       "type": "string",
       "title": "Notes"
     },
-    "current_lat": {
+    "lat": {
       "type": "number",
-      "title": "Current Latitude"
+      "title": "Last Latitude"
     },
-    "current_lng": {
+    "lng": {
       "type": "number",
-      "title": "Current Longitude"
+      "title": "Last Longitude"
     },
-    "location_updated_at": {
+    "last_location_update": {
       "type": "string",
-      "title": "Location Last Updated"
+      "title": "Last Location Update"
     },
-    "current_job_id": {
-      "type": "string",
-      "title": "Current Job ID"
-    },
-    "current_job_number": {
-      "type": "string",
-      "title": "Current Job Number"
-    },
-    "is_on_route": {
+    "is_tracking": {
       "type": "boolean",
-      "title": "Currently On Route"
+      "title": "GPS Tracking Active"
     }
   },
   "required": []

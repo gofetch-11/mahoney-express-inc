@@ -3,7 +3,6 @@ import { calculateRoute } from "@/functions/calculateRoute";
 import { Driver, Job } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
 import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X } from "lucide-react";
-import { updateDriverLocation } from "@/functions/updateDriverLocation";
 
 const GREEN = "#0fa14a";
 const BG = "#0e1012";
@@ -93,25 +92,36 @@ export default function DriverPortal() {
     await Job.update(job.id, { status: newStatus });
     setJobs(js => js.map(j => j.id === job.id ? { ...j, status: newStatus } : j));
     showToast(`✓ ${job.job_number} marked ${newStatus}`);
-    setUpdating(null);
-    // Push GPS location when going In Transit or Delivered
-    if ((newStatus === "In Transit" || newStatus === "Delivered") && selectedDriver) {
+
+    // Push GPS when going In Transit
+    if (newStatus === "In Transit" && selectedDriver?.id) {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            updateDriverLocation({
-              driver_id: selectedDriver.id,
+          async (pos) => {
+            const Driver = base44.entities.Driver;
+            await Driver.update(selectedDriver.id, {
               lat: pos.coords.latitude,
               lng: pos.coords.longitude,
-              job_id: job.id,
-              job_number: job.job_number,
-              is_on_route: newStatus === "In Transit",
-            }).catch(() => {});
+              last_location_update: new Date().toISOString(),
+              is_tracking: true,
+            });
           },
-          () => {} // silently fail if GPS denied
+          (err) => console.warn("GPS unavailable:", err.message),
+          { enableHighAccuracy: true, timeout: 8000 }
         );
       }
     }
+
+    // Clear tracking when delivered
+    if (newStatus === "Delivered" && selectedDriver?.id) {
+      const hasOtherActiveJobs = jobs.some(j => j.id !== job.id && j.status === "In Transit");
+      if (!hasOtherActiveJobs) {
+        const Driver = base44.entities.Driver;
+        await Driver.update(selectedDriver.id, { is_tracking: false });
+      }
+    }
+
+    setUpdating(null);
   }
 
   async function uploadPOD(job, file) {

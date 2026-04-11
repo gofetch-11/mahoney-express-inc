@@ -17,6 +17,7 @@ import NewJob from './pages/NewJob';
 import Payroll from './pages/Payroll';
 import SharePointItems from './pages/SharePointItems';
 import DriverPortal from './pages/DriverPortal';
+import LiveMapDashboard from './pages/LiveMapDashboard';
 import VehicleMaintenance from './pages/VehicleMaintenance';
 import PageNotFound from './lib/PageNotFound';
 
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
       <Route path="/Payroll" element={<Payroll />} />
       <Route path="/SharePointItems" element={<SharePointItems />} />
       <Route path="/DriverPortal" element={<DriverPortal />} />
+      <Route path="/LiveMap" element={<LiveMapDashboard />} />
       <Route path="/VehicleMaintenance" element={<VehicleMaintenance />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

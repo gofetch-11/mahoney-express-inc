@@ -1,0 +1,100 @@
+{
+  "name": "Driver",
+  "type": "object",
+  "properties": {
+    "first_name": {
+      "type": "string",
+      "title": "First Name"
+    },
+    "last_name": {
+      "type": "string",
+      "title": "Last Name"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "title": "Vehicle Type",
+      "enum": [
+        "Car",
+        "Van",
+        "Box Truck",
+        "Sprinter",
+        "Semi",
+        "Motorcycle",
+        "Other"
+      ]
+    },
+    "vehicle_make": {
+      "type": "string",
+      "title": "Vehicle Make"
+    },
+    "vehicle_model": {
+      "type": "string",
+      "title": "Vehicle Model"
+    },
+    "license_plate": {
+      "type": "string",
+      "title": "License Plate"
+    },
+    "pay_type": {
+      "type": "string",
+      "title": "Pay Type",
+      "enum": [
+        "Per Mile",
+        "Per Job",
+        "Hourly",
+        "Percentage"
+      ]
+    },
+    "pay_rate": {
+      "type": "number",
+      "title": "Pay Rate"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "Active",
+        "Inactive",
+        "On Leave"
+      ],
+      "default": "Active"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "current_lat": {
+      "type": "number",
+      "title": "Current Latitude"
+    },
+    "current_lng": {
+      "type": "number",
+      "title": "Current Longitude"
+    },
+    "location_updated_at": {
+      "type": "string",
+      "title": "Location Last Updated"
+    },
+    "current_job_id": {
+      "type": "string",
+      "title": "Current Job ID"
+    },
+    "current_job_number": {
+      "type": "string",
+      "title": "Current Job Number"
+    },
+    "is_on_route": {
+      "type": "boolean",
+      "title": "Currently On Route"
+    }
+  },
+  "required": []
+}

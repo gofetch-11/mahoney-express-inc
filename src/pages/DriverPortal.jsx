@@ -3,6 +3,7 @@ import { calculateRoute } from "@/functions/calculateRoute";
 import { Driver, Job } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
 import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X } from "lucide-react";
+import { updateDriverLocation } from "@/functions/updateDriverLocation";
 
 const GREEN = "#0fa14a";
 const BG = "#0e1012";
@@ -93,6 +94,24 @@ export default function DriverPortal() {
     setJobs(js => js.map(j => j.id === job.id ? { ...j, status: newStatus } : j));
     showToast(`✓ ${job.job_number} marked ${newStatus}`);
     setUpdating(null);
+    // Push GPS location when going In Transit or Delivered
+    if ((newStatus === "In Transit" || newStatus === "Delivered") && selectedDriver) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            updateDriverLocation({
+              driver_id: selectedDriver.id,
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              job_id: job.id,
+              job_number: job.job_number,
+              is_on_route: newStatus === "In Transit",
+            }).catch(() => {});
+          },
+          () => {} // silently fail if GPS denied
+        );
+      }
+    }
   }
 
   async function uploadPOD(job, file) {

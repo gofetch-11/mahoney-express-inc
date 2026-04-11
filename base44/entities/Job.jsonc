@@ -1,0 +1,143 @@
+{
+  "name": "Job",
+  "type": "object",
+  "properties": {
+    "job_number": {
+      "type": "string",
+      "title": "Job Number"
+    },
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "driver_id": {
+      "type": "string",
+      "title": "Driver ID"
+    },
+    "driver_name": {
+      "type": "string",
+      "title": "Driver Name"
+    },
+    "service_type": {
+      "type": "string",
+      "title": "Service Type"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "Pending",
+        "Assigned",
+        "In Transit",
+        "Delivered",
+        "Cancelled"
+      ],
+      "default": "Pending"
+    },
+    "pickup_address": {
+      "type": "string",
+      "title": "Pickup Address"
+    },
+    "pickup_city": {
+      "type": "string",
+      "title": "Pickup City"
+    },
+    "pickup_state": {
+      "type": "string",
+      "title": "Pickup State"
+    },
+    "pickup_zip": {
+      "type": "string",
+      "title": "Pickup ZIP"
+    },
+    "pickup_contact": {
+      "type": "string",
+      "title": "Pickup Contact"
+    },
+    "pickup_phone": {
+      "type": "string",
+      "title": "Pickup Phone"
+    },
+    "delivery_address": {
+      "type": "string",
+      "title": "Delivery Address"
+    },
+    "delivery_city": {
+      "type": "string",
+      "title": "Delivery City"
+    },
+    "delivery_state": {
+      "type": "string",
+      "title": "Delivery State"
+    },
+    "delivery_zip": {
+      "type": "string",
+      "title": "Delivery ZIP"
+    },
+    "delivery_contact": {
+      "type": "string",
+      "title": "Delivery Contact"
+    },
+    "delivery_phone": {
+      "type": "string",
+      "title": "Delivery Phone"
+    },
+    "pieces": {
+      "type": "number",
+      "title": "Pieces"
+    },
+    "weight_lbs": {
+      "type": "number",
+      "title": "Weight (lbs)"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "special_instructions": {
+      "type": "string",
+      "title": "Special Instructions"
+    },
+    "miles": {
+      "type": "number",
+      "title": "Miles"
+    },
+    "ready_time": {
+      "type": "string",
+      "title": "Ready Time"
+    },
+    "deadline": {
+      "type": "string",
+      "title": "Deadline"
+    },
+    "bill_rate": {
+      "type": "number",
+      "title": "Bill Rate ($)"
+    },
+    "driver_pay": {
+      "type": "number",
+      "title": "Driver Pay ($)"
+    },
+    "reference_number": {
+      "type": "string",
+      "title": "Reference Number"
+    },
+    "bol_number": {
+      "type": "string",
+      "title": "BOL Number"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "pod_photos": {
+      "type": "string",
+      "title": "POD Photos (JSON)"
+    }
+  },
+  "required": []
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Job, Driver, Customer } from "@/api/entities";
+import { Job, Driver, Customer, Invoice } from "@/api/entities";
 import { Plus, Search, Package, Upload, X, CheckCircle, AlertCircle, FileText, Download } from "lucide-react";
 
 const GREEN="#0fa14a"; const BG="#0e1012"; const SURFACE="#161a1d"; const SURFACE2="#1e2328";
@@ -430,9 +430,39 @@ function EditJobModal({ job, onClose }) {
   const [form, setForm] = useState({...job});
   const [drivers, setDrivers] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [invoicing, setInvoicing] = useState(false);
+  const [invoiced, setInvoiced] = useState(false);
   useEffect(()=>{ Driver.filter({status:"Active"}).then(setDrivers); },[]);
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const save=async()=>{ setSaving(true); await Job.update(job.id,{...form,bill_rate:parseFloat(form.bill_rate)||0,driver_pay:parseFloat(form.driver_pay)||0}); setSaving(false); onClose(); };
+
+  const generateInvoice = async () => {
+    setInvoicing(true);
+    const d = new Date();
+    const dueDate = new Date(d); dueDate.setDate(d.getDate() + 30);
+    const invNumber = `INV-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*900+100)}`;
+    const billRate = parseFloat(form.bill_rate) || 0;
+    const lineItems = JSON.stringify([{ job_number: form.job_number, description: `${form.service_type||'Delivery'}: ${form.pickup_city||'?'} → ${form.delivery_city||'?'}`, amount: billRate }]);
+    await Invoice.create({
+      invoice_number: invNumber,
+      customer_id: form.customer_id || '',
+      customer_name: form.customer_name || '',
+      job_ids: job.id,
+      line_items: lineItems,
+      issue_date: d.toISOString().split('T')[0],
+      due_date: dueDate.toISOString().split('T')[0],
+      payment_terms: 'Net 30',
+      subtotal: billRate,
+      tax_amount: 0,
+      tax_rate: 0,
+      total_amount: billRate,
+      amount_paid: 0,
+      balance_due: billRate,
+      status: 'Draft',
+    });
+    setInvoiced(true);
+    setInvoicing(false);
+  };
   const inp={width:"100%",padding:"8px 12px",borderRadius:10,border:`1px solid ${BORDER}`,background:SURFACE2,color:TEXT,fontSize:13,outline:"none",boxSizing:"border-box"};
   const lbl={display:"block",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.07em",color:MUTED,marginBottom:5,fontFamily:"Barlow, sans-serif"};
   return (
@@ -457,9 +487,14 @@ function EditJobModal({ job, onClose }) {
           <div><label style={lbl}>Weight (lbs)</label><input style={inp} type="number" value={form.weight_lbs||""} onChange={e=>set("weight_lbs",e.target.value)} /></div>
           <div style={{ gridColumn:"1/-1" }}><label style={lbl}>Notes</label><textarea style={{...inp,height:60,resize:"vertical"}} value={form.notes||""} onChange={e=>set("notes",e.target.value)} /></div>
         </div>
-        <div style={{ padding:"14px 22px",borderTop:`1px solid ${BORDER}`,display:"flex",justifyContent:"flex-end",gap:10,flexShrink:0 }}>
-          <button onClick={onClose} style={{ padding:"9px 18px",borderRadius:10,background:"transparent",color:MUTED,border:`1px solid ${BORDER}`,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Barlow, sans-serif" }}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{ padding:"9px 20px",borderRadius:10,background:GREEN,color:"#fff",border:"none",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Barlow, sans-serif",opacity:saving?0.6:1 }}>{saving?"Saving…":"Save Changes"}</button>
+        <div style={{ padding:"14px 22px",borderTop:`1px solid ${BORDER}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexShrink:0,flexWrap:"wrap" }}>
+          <button onClick={generateInvoice} disabled={invoicing||invoiced||!form.bill_rate} style={{ display:"flex",alignItems:"center",gap:6,padding:"9px 16px",borderRadius:10,background:invoiced?"rgba(15,161,74,0.15)":"rgba(255,255,255,0.07)",color:invoiced?GREEN:MUTED,border:`1px solid ${invoiced?"rgba(15,161,74,0.4)":BORDER}`,fontWeight:700,fontSize:13,cursor:invoiced||!form.bill_rate?"not-allowed":"pointer",fontFamily:"Barlow, sans-serif",opacity:(!form.bill_rate&&!invoiced)?0.4:1 }}>
+            {invoiced ? "✓ Invoice Created" : invoicing ? "Creating…" : "⚡ Generate Invoice"}
+          </button>
+          <div style={{ display:"flex",gap:10 }}>
+            <button onClick={onClose} style={{ padding:"9px 18px",borderRadius:10,background:"transparent",color:MUTED,border:`1px solid ${BORDER}`,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Barlow, sans-serif" }}>Cancel</button>
+            <button onClick={save} disabled={saving} style={{ padding:"9px 20px",borderRadius:10,background:GREEN,color:"#fff",border:"none",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Barlow, sans-serif",opacity:saving?0.6:1 }}>{saving?"Saving…":"Save Changes"}</button>
+          </div>
         </div>
       </div>
     </div>

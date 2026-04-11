@@ -1,0 +1,80 @@
+{
+  "name": "Vehicle",
+  "type": "object",
+  "properties": {
+    "unit_number": {
+      "type": "string",
+      "title": "Unit Number"
+    },
+    "make": {
+      "type": "string",
+      "title": "Make"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model"
+    },
+    "year": {
+      "type": "number",
+      "title": "Year"
+    },
+    "license_plate": {
+      "type": "string",
+      "title": "License Plate"
+    },
+    "vin": {
+      "type": "string",
+      "title": "VIN"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "title": "Type",
+      "enum": [
+        "Car",
+        "Van",
+        "Sprinter",
+        "Box Truck",
+        "Semi",
+        "Motorcycle",
+        "Other"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "Active",
+        "In Service",
+        "Out of Service"
+      ],
+      "default": "Active"
+    },
+    "current_mileage": {
+      "type": "number",
+      "title": "Current Mileage"
+    },
+    "next_service_mileage": {
+      "type": "number",
+      "title": "Next Service Due (miles)"
+    },
+    "next_service_date": {
+      "type": "string",
+      "title": "Next Service Date"
+    },
+    "assigned_driver_id": {
+      "type": "string",
+      "title": "Assigned Driver ID"
+    },
+    "assigned_driver_name": {
+      "type": "string",
+      "title": "Assigned Driver"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "unit_number"
+  ]
+}

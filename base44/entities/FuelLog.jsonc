@@ -1,0 +1,52 @@
+{
+  "name": "FuelLog",
+  "type": "object",
+  "properties": {
+    "vehicle_id": {
+      "type": "string",
+      "title": "Vehicle ID"
+    },
+    "unit_number": {
+      "type": "string",
+      "title": "Unit Number"
+    },
+    "date": {
+      "type": "string",
+      "title": "Date"
+    },
+    "gallons": {
+      "type": "number",
+      "title": "Gallons"
+    },
+    "price_per_gallon": {
+      "type": "number",
+      "title": "Price per Gallon ($)"
+    },
+    "total_cost": {
+      "type": "number",
+      "title": "Total Cost ($)"
+    },
+    "mileage": {
+      "type": "number",
+      "title": "Odometer Reading"
+    },
+    "location": {
+      "type": "string",
+      "title": "Station / Location"
+    },
+    "driver_name": {
+      "type": "string",
+      "title": "Driver"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "vehicle_id",
+    "date",
+    "gallons",
+    "total_cost"
+  ]
+}

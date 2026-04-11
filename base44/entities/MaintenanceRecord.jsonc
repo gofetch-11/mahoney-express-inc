@@ -1,0 +1,72 @@
+{
+  "name": "MaintenanceRecord",
+  "type": "object",
+  "properties": {
+    "vehicle_id": {
+      "type": "string",
+      "title": "Vehicle ID"
+    },
+    "unit_number": {
+      "type": "string",
+      "title": "Unit Number"
+    },
+    "service_type": {
+      "type": "string",
+      "title": "Service Type",
+      "enum": [
+        "Oil Change",
+        "Tire Rotation",
+        "Brake Service",
+        "Transmission",
+        "Engine Repair",
+        "Inspection",
+        "Scheduled Service",
+        "Tire Replacement",
+        "Other"
+      ]
+    },
+    "service_date": {
+      "type": "string",
+      "title": "Service Date"
+    },
+    "mileage_at_service": {
+      "type": "number",
+      "title": "Mileage at Service"
+    },
+    "cost": {
+      "type": "number",
+      "title": "Cost ($)"
+    },
+    "vendor": {
+      "type": "string",
+      "title": "Vendor / Shop"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "next_service_mileage": {
+      "type": "number",
+      "title": "Next Service Due (miles)"
+    },
+    "next_service_date": {
+      "type": "string",
+      "title": "Next Service Date"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "Scheduled",
+        "Completed",
+        "In Progress"
+      ],
+      "default": "Scheduled"
+    }
+  },
+  "required": [
+    "vehicle_id",
+    "service_type",
+    "service_date"
+  ]
+}

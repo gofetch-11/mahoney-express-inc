@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Job, Invoice, Driver, Customer, Expense } from "@/api/entities";
-import { Clock, Truck, CheckCircle, Users, TrendingUp, TrendingDown, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Package, MapPin } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import MapView from "../components/MapView";
 
 const GREEN = "#0fa14a";
@@ -26,8 +26,9 @@ const STATUS_COLORS = {
 
 export default function Home() {
   const [stats, setStats] = useState({ pendingJobs:0, inTransitJobs:0, deliveredToday:0, activeDrivers:0, openInvoiceAmount:0, overdueAmount:0, revenueThisMonth:0, expensesThisMonth:0, totalJobs:0 });
-  const [recentJobs, setRecentJobs] = useState([]);
-  const [inTransitJobs, setInTransitJobs] = useState([]);
+  const [revenueData, setRevenueData] = useState([]);
+  const [jobStatusData, setJobStatusData] = useState([]);
+  const [driverData, setDriverData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadDashboard(); }, []);
@@ -51,8 +52,32 @@ export default function Home() {
       });
       setRecentJobs(jobs.sort((a,b)=>new Date(b.created_date)-new Date(a.created_date)).slice(0,8));
       setInTransitJobs(jobs.filter(j => j.status === "In Transit"));
-    } catch (e) {
-      console.error("Dashboard load error:", e);
+
+      // Revenue per month (last 6 months)
+      const monthLabels = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const prefix = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const label = d.toLocaleString('default', { month: 'short' });
+        const rev = invoices.filter(inv => inv.status === 'Paid' && inv.issue_date?.startsWith(prefix)).reduce((s,i) => s+(i.total_amount||0), 0);
+        const exp = expenses.filter(e => e.date?.startsWith(prefix)).reduce((s,e) => s+(e.amount||0), 0);
+        monthLabels.push({ month: label, Revenue: Math.round(rev), Expenses: Math.round(exp) });
+      }
+      setRevenueData(monthLabels);
+
+      // Job status breakdown
+      const statusCounts = ['Pending','Assigned','In Transit','Delivered','Cancelled'].map(s => ({
+        name: s, value: jobs.filter(j => j.status === s).length
+      })).filter(s => s.value > 0);
+      setJobStatusData(statusCounts);
+
+      // Driver availability
+      const drvStats = drivers.map(d => ({
+        name: `${d.first_name} ${d.last_name}`.trim().split(' ').map((n,i) => i===0 ? n : n[0]+'.').join(' '),
+        Jobs: jobs.filter(j => j.driver_id === d.id && ['Assigned','In Transit'].includes(j.status)).length,
+        status: d.status,
+      })).filter(d => d.status === 'Active').slice(0, 8);
+      setDriverData(drvStats);
     } finally {
       setLoading(false);
     }
@@ -156,6 +181,67 @@ export default function Home() {
             <p style={{ fontSize:26, fontWeight:800, color:"#f87171", margin:0, fontFamily:"Barlow, sans-serif" }}>{fmt(stats.overdueAmount)}</p>
           </div>
         </div>
+
+        {/* Charts Section */}
+        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr", gap:16, marginBottom:24 }}>
+          {/* Revenue vs Expenses */}
+          <div style={{ ...card, padding:20 }}>
+            <h2 style={{ fontSize:14, fontWeight:700, color:TEXT, fontFamily:"Barlow, sans-serif", margin:"0 0 16px", display:"flex", alignItems:"center", gap:8 }}>
+              <TrendingUp size={15} style={{ color:GREEN }}/> Revenue vs Expenses (6 Months)
+            </h2>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={revenueData} margin={{ top:0, right:0, bottom:0, left:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="month" tick={{ fill:MUTED, fontSize:11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill:MUTED, fontSize:10 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                <Tooltip formatter={(v) => fmt(v)} contentStyle={{ background:SURFACE2, border:`1px solid rgba(255,255,255,0.1)`, borderRadius:8, color:TEXT, fontSize:12 }} />
+                <Bar dataKey="Revenue" fill={GREEN} radius={[4,4,0,0]} />
+                <Bar dataKey="Expenses" fill="#ef4444" radius={[4,4,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Job Status Pie */}
+          <div style={{ ...card, padding:20 }}>
+            <h2 style={{ fontSize:14, fontWeight:700, color:TEXT, fontFamily:"Barlow, sans-serif", margin:"0 0 16px", display:"flex", alignItems:"center", gap:8 }}>
+              <Package size={15} style={{ color:GREEN }}/> Job Status
+            </h2>
+            {jobStatusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={jobStatusData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+                    {jobStatusData.map((entry, i) => {
+                      const colors = { Pending:'#fbbf24', Assigned:'#60a5fa', 'In Transit':'#a78bfa', Delivered:GREEN, Cancelled:'#f87171' };
+                      return <Cell key={i} fill={colors[entry.name] || '#888'} />;
+                    })}
+                  </Pie>
+                  <Tooltip contentStyle={{ background:SURFACE2, border:`1px solid rgba(255,255,255,0.1)`, borderRadius:8, color:TEXT, fontSize:12 }} />
+                  <Legend iconType="circle" iconSize={8} formatter={(v) => <span style={{ color:MUTED, fontSize:11 }}>{v}</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height:200, display:'flex', alignItems:'center', justifyContent:'center', color:MUTED, fontSize:13 }}>No jobs yet</div>
+            )}
+          </div>
+        </div>
+
+        {/* Driver Active Jobs */}
+        {driverData.length > 0 && (
+          <div style={{ ...card, padding:20, marginBottom:24 }}>
+            <h2 style={{ fontSize:14, fontWeight:700, color:TEXT, fontFamily:"Barlow, sans-serif", margin:"0 0 16px", display:"flex", alignItems:"center", gap:8 }}>
+              <Truck size={15} style={{ color:GREEN }}/> Driver Active Jobs
+            </h2>
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={driverData} layout="vertical" margin={{ top:0, right:16, bottom:0, left:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                <XAxis type="number" allowDecimals={false} tick={{ fill:MUTED, fontSize:11 }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fill:MUTED, fontSize:11 }} axisLine={false} tickLine={false} width={90} />
+                <Tooltip contentStyle={{ background:SURFACE2, border:`1px solid rgba(255,255,255,0.1)`, borderRadius:8, color:TEXT, fontSize:12 }} />
+                <Bar dataKey="Jobs" fill="#a78bfa" radius={[0,4,4,0]} label={{ position:'right', fill:MUTED, fontSize:11 }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Map View */}
         <div style={{ ...card, overflow:"hidden", marginBottom:24 }}>

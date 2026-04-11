@@ -16,6 +16,7 @@ import Layout from './pages/Layout';
 import NewJob from './pages/NewJob';
 import Payroll from './pages/Payroll';
 import SharePointItems from './pages/SharePointItems';
+import DriverPortal from './pages/DriverPortal';
 import PageNotFound from './lib/PageNotFound';
 
 const AuthenticatedApp = () => {
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
       <Route path="/NewJob" element={<NewJob />} />
       <Route path="/Payroll" element={<Payroll />} />
       <Route path="/SharePointItems" element={<SharePointItems />} />
+      <Route path="/DriverPortal" element={<DriverPortal />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

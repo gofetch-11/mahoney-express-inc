@@ -1,9 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Outlet, useLocation } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { AuthProvider, useAuth } from '@/lib/AuthContext'
+import { AuthProvider } from '@/lib/AuthContext'
 import UserNotRegisteredError from '@/components/UserNotRegisteredError'
+
 import Customers from './pages/Customers';
 import Dashboard from './pages/Dashboard';
 import DriverReport from './pages/DriverReport';
@@ -15,59 +16,50 @@ import Jobs from './pages/Jobs';
 import Layout from './pages/Layout';
 import NewJob from './pages/NewJob';
 import Payroll from './pages/Payroll';
-
 import DriverPortal from './pages/DriverPortal';
 import VehicleMaintenance from './pages/VehicleMaintenance';
 import LiveDispatch from './pages/LiveDispatch';
 import DriverAnalytics from './pages/DriverAnalytics';
 import CustomerPortal from './pages/CustomerPortal';
-
 import PageNotFound from './lib/PageNotFound';
 
-const PUBLIC_PATHS = ['/'];  // app is public — all paths accessible
-
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings } = useAuth();
-
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
+function AppLayout() {
+  const location = useLocation();
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/Home" replace />} />
-      <Route path="/Customers" element={<Customers />} />
-      <Route path="/Dashboard" element={<Dashboard />} />
-      <Route path="/DriverReport" element={<DriverReport />} />
-      <Route path="/Drivers" element={<Drivers />} />
-      <Route path="/Finances" element={<Finances />} />
-      <Route path="/Home" element={<Home />} />
-      <Route path="/Invoices" element={<Invoices />} />
-      <Route path="/Jobs" element={<Jobs />} />
-      <Route path="/Layout" element={<Layout />} />
-      <Route path="/NewJob" element={<NewJob />} />
-      <Route path="/Payroll" element={<Payroll />} />
-
-      <Route path="/DriverPortal" element={<DriverPortal />} />
-      <Route path="/VehicleMaintenance" element={<VehicleMaintenance />} />
-      <Route path="/LiveDispatch" element={<LiveDispatch />} />
-      <Route path="/DriverAnalytics" element={<DriverAnalytics />} />
-      <Route path="/CustomerPortal" element={<CustomerPortal />} />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <Layout currentPath={location.pathname}>
+      <Outlet />
+    </Layout>
   );
-};
+}
 
 function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
-          <AuthenticatedApp />
+          <Routes>
+            {/* Public portals - no layout */}
+            <Route path="/DriverPortal" element={<DriverPortal />} />
+            <Route path="/CustomerPortal" element={<CustomerPortal />} />
+
+            {/* Main app with sidebar layout */}
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/jobs" element={<Jobs />} />
+              <Route path="/new-job" element={<NewJob />} />
+              <Route path="/drivers" element={<Drivers />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/payroll" element={<Payroll />} />
+              <Route path="/finances" element={<Finances />} />
+              <Route path="/driver-report" element={<DriverReport />} />
+              <Route path="/VehicleMaintenance" element={<VehicleMaintenance />} />
+              <Route path="/LiveDispatch" element={<LiveDispatch />} />
+              <Route path="/DriverAnalytics" element={<DriverAnalytics />} />
+              <Route path="/Dashboard" element={<Dashboard />} />
+              <Route path="*" element={<PageNotFound />} />
+            </Route>
+          </Routes>
         </Router>
         <Toaster />
       </QueryClientProvider>

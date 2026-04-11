@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Invoice, Job, Customer } from "@/api/entities";
-import { Plus, FileText, DollarSign, Printer, ArrowLeft, CheckCircle, AlertCircle, Clock, X } from "lucide-react";
+import { Plus, FileText, DollarSign, Printer, ArrowLeft, CheckCircle, AlertCircle, Clock, X, Download } from "lucide-react";
+import { jsPDF } from "jspdf";
 
 const GREEN = "#0fa14a";
 const BLACK = "#060204";
@@ -319,6 +320,171 @@ function CreateInvoiceModal({ onClose }) {
 }
 
 // ─── INVOICE VIEW / PRINT ─────────────────────────────────────────────────────
+function generateInvoicePDF(inv) {
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const lineItems = (() => { try { return JSON.parse(inv.line_items || "[]"); } catch { return []; } })();
+  const GREEN = [15, 161, 74];
+  const BLACK = [6, 2, 4];
+  const W = 612;
+
+  // Green header strip
+  doc.setFillColor(...GREEN);
+  doc.rect(0, 0, W, 6, "F");
+
+  // Dark header bar
+  doc.setFillColor(...BLACK);
+  doc.rect(0, 6, W, 80, "F");
+
+  // Company name
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text("MAHONEY EXPRESS, INC.", 40, 52);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(150, 150, 150);
+  doc.text("+1 708.955.9082  |  accounting@mahoneyexpress.com", 40, 68);
+
+  // Invoice label + number
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.text("INVOICE", W - 40, 34, { align: "right" });
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...GREEN);
+  doc.text(inv.invoice_number || "", W - 40, 52, { align: "right" });
+
+  // Status badge
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text(inv.status || "", W - 40, 68, { align: "right" });
+
+  let y = 110;
+
+  // Bill To + Invoice Details
+  doc.setFillColor(248, 248, 246);
+  doc.rect(0, y - 14, W, 80, "F");
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...GREEN);
+  doc.text("BILL TO", 40, y);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...BLACK);
+  doc.text(inv.customer_name || "—", 40, y + 16);
+
+  // Right side: invoice details
+  const details = [
+    ["Invoice Number", inv.invoice_number],
+    ["Issue Date", inv.issue_date || "—"],
+    ["Due Date", inv.due_date || "—"],
+    ["Payment Terms", inv.payment_terms || "—"],
+  ];
+  details.forEach(([label, val], i) => {
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text(label, W / 2 + 10, y + i * 14);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLACK);
+    doc.text(String(val || "—"), W - 40, y + i * 14, { align: "right" });
+  });
+
+  y += 90;
+
+  // Line Items Header
+  doc.setFillColor(...BLACK);
+  doc.rect(40, y, W - 80, 24, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text("JOB #", 52, y + 15);
+  doc.text("DESCRIPTION", 120, y + 15);
+  doc.setTextColor(...GREEN);
+  doc.text("AMOUNT", W - 52, y + 15, { align: "right" });
+  y += 24;
+
+  // Line Items
+  lineItems.forEach((item, i) => {
+    doc.setFillColor(i % 2 === 0 ? 255 : 249, i % 2 === 0 ? 255 : 249, i % 2 === 0 ? 255 : 249);
+    doc.rect(40, y, W - 80, 22, "F");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...GREEN);
+    doc.text(String(item.job_number || "—"), 52, y + 14);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80, 80, 80);
+    doc.text(String(item.description || ""), 120, y + 14, { maxWidth: W - 220 });
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BLACK);
+    doc.text(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(item.amount || 0), W - 52, y + 14, { align: "right" });
+    y += 22;
+  });
+
+  if (lineItems.length === 0) {
+    doc.setFontSize(9); doc.setTextColor(150, 150, 150);
+    doc.text("No line items", W / 2, y + 14, { align: "center" });
+    y += 22;
+  }
+
+  y += 16;
+
+  // Totals block
+  const fmt = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n || 0);
+  const totals = [
+    ["Subtotal", fmt(inv.subtotal), false],
+    inv.tax_amount > 0 ? [`Tax (${inv.tax_rate || 0}%)`, fmt(inv.tax_amount), false] : null,
+    ["Total", fmt(inv.total_amount), true],
+    (inv.amount_paid || 0) > 0 ? ["Amount Paid", `(${fmt(inv.amount_paid)})`, false] : null,
+    ["Balance Due", fmt(inv.balance_due), true],
+  ].filter(Boolean);
+
+  totals.forEach(([label, val, bold]) => {
+    if (bold) { doc.setDrawColor(200, 200, 200); doc.line(W - 200, y - 2, W - 40, y - 2); }
+    doc.setFontSize(bold ? 11 : 9);
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setTextColor(bold ? 0 : 100, bold ? 0 : 100, bold ? 0 : 100);
+    doc.text(label, W - 200, y + 10);
+    if (label === "Balance Due" && (inv.balance_due || 0) > 0) doc.setTextColor(239, 68, 68);
+    else if (label === "Amount Paid") doc.setTextColor(15, 161, 74);
+    else doc.setTextColor(6, 2, 4);
+    doc.text(val, W - 40, y + 10, { align: "right" });
+    y += bold ? 20 : 16;
+  });
+
+  y += 20;
+
+  // Notes
+  if (inv.notes) {
+    doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...GREEN);
+    doc.text("NOTES", 40, y);
+    doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(80, 80, 80);
+    doc.text(inv.notes, 40, y + 12, { maxWidth: W - 80 });
+    y += 40;
+  }
+
+  // Remit To
+  doc.setFillColor(249, 249, 249);
+  doc.rect(40, y, W - 80, 44, "F");
+  doc.setFontSize(8); doc.setFont("helvetica", "bold"); doc.setTextColor(...GREEN);
+  doc.text("REMIT PAYMENT TO", 52, y + 14);
+  doc.setFont("helvetica", "normal"); doc.setTextColor(80, 80, 80);
+  doc.text("Mahoney Express, Inc.  |  1615 N Newland Ave, Chicago, IL 60707", 52, y + 26);
+  doc.text("+1 708.955.9082  |  accounting@mahoneyexpress.com", 52, y + 38);
+
+  // Footer strip
+  doc.setFillColor(...BLACK);
+  doc.rect(0, 740, W, 32, "F");
+  doc.setFillColor(...GREEN);
+  doc.rect(0, 772, W, 4, "F");
+  doc.setFontSize(9); doc.setFont("helvetica", "italic"); doc.setTextColor(...GREEN);
+  doc.text("When tomorrow's too late!", W / 2, 760, { align: "center" });
+
+  doc.save(`${inv.invoice_number || "invoice"}.pdf`);
+}
+
 function InvoiceView({ invoice, onBack, onStatusChange }) {
   const [inv, setInv] = useState(invoice);
   const [payment, setPayment] = useState("");
@@ -369,8 +535,11 @@ function InvoiceView({ invoice, onBack, onStatusChange }) {
               + Record Payment
             </button>
           )}
+          <button onClick={() => generateInvoicePDF(inv)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: GREEN, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif" }}>
+            <Download size={14} />Download PDF
+          </button>
           <button onClick={() => window.print()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: BLACK, color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif" }}>
-            <Printer size={14} />Print / PDF
+            <Printer size={14} />Print
           </button>
         </div>
       </div>

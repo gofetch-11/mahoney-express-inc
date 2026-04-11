@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   LayoutDashboard, Package, Truck, Users, Building2,
-  FileText, DollarSign, BarChart2, Menu, Plus, ClipboardList, Smartphone, Wrench, Radio
+  FileText, DollarSign, BarChart2, Menu, Plus, ClipboardList, Smartphone, Wrench, Radio, Activity
 } from "lucide-react";
 
 const LOGO = "https://media.base44.com/images/public/69cb07fb94b4627f0bd76151/a863be72e_MahoneyExpressInc-Header.png";
@@ -20,6 +20,7 @@ const NAV = [
   { href: "/DriverPortal", label: "Driver Portal", icon: Smartphone },
   { href: "/VehicleMaintenance", label: "Maintenance", icon: Wrench },
   { href: "/LiveDispatch", label: "Live Map", icon: Radio },
+  { href: "/DriverAnalytics", label: "Driver Analytics", icon: Activity },
 ];
 
 export default function Layout({ children, currentPath }) {

@@ -19,6 +19,7 @@ import SharePointItems from './pages/SharePointItems';
 import DriverPortal from './pages/DriverPortal';
 import VehicleMaintenance from './pages/VehicleMaintenance';
 import LiveDispatch from './pages/LiveDispatch';
+import DriverAnalytics from './pages/DriverAnalytics';
 import PageNotFound from './lib/PageNotFound';
 
 const AuthenticatedApp = () => {
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
       <Route path="/DriverPortal" element={<DriverPortal />} />
       <Route path="/VehicleMaintenance" element={<VehicleMaintenance />} />
       <Route path="/LiveDispatch" element={<LiveDispatch />} />
+      <Route path="/DriverAnalytics" element={<DriverAnalytics />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

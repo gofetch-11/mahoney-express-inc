@@ -22,7 +22,6 @@ const NAV = [
   { href: "/LiveDispatch", label: "Live Map", icon: Radio },
   { href: "/DriverAnalytics", label: "Efficiency", icon: Activity },
   { href: "/CustomerPortal", label: "Customer Portal", icon: Globe },
-  { href: "/CustomerPortal", label: "Customer Portal", icon: Building2 },
 ];
 
 export default function Layout({ children, currentPath }) {

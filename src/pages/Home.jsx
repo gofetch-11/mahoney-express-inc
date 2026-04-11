@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Job, Invoice, Driver, Customer, Expense } from "@/api/entities";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { Clock, Truck, CheckCircle, Users, TrendingUp, TrendingDown, AlertCircle, DollarSign, ArrowUpRight, ArrowDownRight, Package, MapPin } from "lucide-react";
 import MapView from "../components/MapView";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, CartesianGrid } from "recharts";
 
 const GREEN = "#0fa14a";
 const BG = "#0e1012";
@@ -29,6 +30,8 @@ export default function Home() {
   const [revenueData, setRevenueData] = useState([]);
   const [jobStatusData, setJobStatusData] = useState([]);
   const [driverData, setDriverData] = useState([]);
+  const [recentJobs, setRecentJobs] = useState([]);
+  const [inTransitJobs, setInTransitJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadDashboard(); }, []);

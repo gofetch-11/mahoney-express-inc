@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { calculateRoute } from "@/functions/calculateRoute";
 import { Driver, Job } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
 import { Camera, Truck, CheckCircle, Clock, MapPin, Package, ChevronDown, Upload, X } from "lucide-react";
@@ -31,6 +32,10 @@ export default function DriverPortal() {
   const [updating, setUpdating] = useState(null);
   const [uploadingJobId, setUploadingJobId] = useState(null);
   const [toast, setToast] = useState("");
+  const [routeOptimized, setRouteOptimized] = useState(false);
+  const [routeSummary, setRouteSummary] = useState("");
+  const [routeMiles, setRouteMiles] = useState(null);
+  const [optimizing, setOptimizing] = useState(false);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 
@@ -57,7 +62,29 @@ export default function DriverPortal() {
       return (order[a.status] ?? 9) - (order[b.status] ?? 9);
     });
     setJobs(todayJobs);
+    setRouteOptimized(false);
+    setRouteSummary("");
     setLoadingJobs(false);
+  }
+
+  async function optimizeRoute() {
+    const activeJobs = jobs.filter(j => j.status !== "Delivered" && j.status !== "Cancelled");
+    if (activeJobs.length < 2) { showToast("Need at least 2 active jobs to optimize."); return; }
+    setOptimizing(true);
+    try {
+      const res = await calculateRoute({ jobs: activeJobs });
+      const { orderedJobs, summary, estimated_total_miles } = res.data;
+      // Rebuild full job list: optimized active jobs first, then delivered/cancelled
+      const rest = jobs.filter(j => j.status === "Delivered" || j.status === "Cancelled");
+      setJobs([...orderedJobs, ...rest]);
+      setRouteOptimized(true);
+      setRouteSummary(summary || "");
+      setRouteMiles(estimated_total_miles || null);
+      showToast("✓ Route optimized!");
+    } catch (e) {
+      showToast("Optimization failed: " + e.message);
+    }
+    setOptimizing(false);
   }
 
   async function updateStatus(job, newStatus) {
@@ -154,6 +181,28 @@ export default function DriverPortal() {
         </button>
       </div>
 
+      {/* Optimize Route Banner */}
+      <div style={{ padding: "12px 16px 0" }}>
+        {!routeOptimized ? (
+          <button onClick={optimizeRoute} disabled={optimizing || jobs.filter(j=>j.status!=="Delivered"&&j.status!=="Cancelled").length < 2}
+            style={{ width: "100%", padding: "12px 16px", borderRadius: 12, background: optimizing ? SURFACE2 : "rgba(15,161,74,0.15)", color: optimizing ? MUTED : GREEN, border: `1px solid ${optimizing ? BORDER : "rgba(15,161,74,0.4)"}`, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "Barlow, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            {optimizing ? (
+              <><div style={{ width: 14, height: 14, borderRadius: "50%", border: `2px solid ${MUTED}`, borderTopColor: GREEN, animation: "spin 1s linear infinite" }} />Calculating optimal route…</>
+            ) : (
+              <>🗺 Optimize My Route ({jobs.filter(j=>j.status!=="Delivered"&&j.status!=="Cancelled").length} stops)</>
+            )}
+          </button>
+        ) : (
+          <div style={{ background: "rgba(15,161,74,0.08)", border: "1px solid rgba(15,161,74,0.25)", borderRadius: 12, padding: "12px 14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: routeSummary ? 6 : 0 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, fontFamily: "Barlow, sans-serif" }}>✓ Route Optimized{routeMiles ? ` · ~${routeMiles} mi` : ""}</span>
+              <button onClick={optimizeRoute} style={{ fontSize: 11, color: MUTED, background: "none", border: "none", cursor: "pointer" }}>Re-optimize</button>
+            </div>
+            {routeSummary && <p style={{ fontSize: 12, color: MUTED, margin: 0, lineHeight: 1.4 }}>{routeSummary}</p>}
+          </div>
+        )}
+      </div>
+
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, padding: "16px 16px 0" }}>
         {[
@@ -177,15 +226,30 @@ export default function DriverPortal() {
             <Package size={36} style={{ marginBottom: 12, opacity: 0.2 }} />
             <p style={{ fontSize: 14 }}>No jobs assigned for today.</p>
           </div>
-        ) : jobs.map(job => {
+        ) : jobs.map((job, index) => {
           const sc = STATUS_CFG[job.status] || STATUS_CFG.Assigned;
           const isExpanded = expandedJob === job.id;
           const podPhotos = job.pod_photos ? JSON.parse(job.pod_photos) : [];
           const isUpdating = updating === job.id;
           const isUploading = uploadingJobId === job.id;
 
+          const stopNumber = index + 1;
+          const isNextStop = routeOptimized && index === jobs.filter(j=>j.status!=="Delivered"&&j.status!=="Cancelled").findIndex(j=>j.id===job.id) && job.status !== "Delivered" && job.status !== "Cancelled" && index === 0;
+
           return (
-            <div key={job.id} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }}>
+            <div key={job.id} style={{ background: SURFACE, border: `1px solid ${isNextStop ? GREEN : BORDER}`, borderRadius: 16, overflow: "hidden", boxShadow: isNextStop ? `0 0 0 2px rgba(15,161,74,0.3), 0 2px 12px rgba(0,0,0,0.3)` : "0 2px 12px rgba(0,0,0,0.3)" }}>
+              {/* Next Stop Badge */}
+              {isNextStop && (
+                <div style={{ background: GREEN, padding: "5px 16px", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#fff", fontFamily: "Barlow, sans-serif", letterSpacing: "0.07em", textTransform: "uppercase" }}>▶ Next Stop</span>
+                </div>
+              )}
+              {routeOptimized && !isNextStop && job.status !== "Delivered" && job.status !== "Cancelled" && (
+                <div style={{ background: SURFACE2, padding: "3px 16px" }}>
+                  <span style={{ fontSize: 10, color: MUTED, fontWeight: 700, fontFamily: "Barlow, sans-serif" }}>Stop #{stopNumber}</span>
+                </div>
+              )}
+
               {/* Job Header */}
               <div onClick={() => setExpandedJob(isExpanded ? null : job.id)}
                 style={{ padding: "16px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>

@@ -4,6 +4,17 @@ module.exports = {
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
   	extend: {
+  		fontFamily: {
+  			heading: ['Barlow', 'sans-serif'],
+  			body: ['Source Sans 3', 'sans-serif'],
+  		},
+  		colors: {
+  			'me-green': 'var(--me-green)',
+  			'me-deep': 'var(--me-deep)',
+  			'me-black': 'var(--me-black)',
+  			'me-silver': 'var(--me-silver)',
+  			'me-silver-lt': 'var(--me-silver-lt)',
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',

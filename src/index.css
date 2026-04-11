@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Source+Sans+3:wght@400;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,6 +39,15 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Mahoney Express Brand Tokens */
+    --me-green: #0fa14a;
+    --me-deep: #009549;
+    --me-black: #060204;
+    --me-silver: #b0b2b7;
+    --me-silver-lt: #e8e9ea;
+    --font-heading: 'Barlow', sans-serif;
+    --font-body: 'Source Sans 3', sans-serif;
   }
 
   .dark {
